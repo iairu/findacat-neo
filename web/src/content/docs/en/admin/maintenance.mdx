@@ -1,0 +1,40 @@
+---
+title: Running the site
+description: Moderation, breeds and EMS colours, users, backups and importing the old database.
+section: admin
+order: 1
+---
+Administrators see an **Administration** button on their [account page](/account/). It has five tabs.
+
+## Approval queue
+
+Cats added by regular users wait here. **Approve** publishes a cat; **Reject** hides it from everyone but its owner and administrators. Cats you add yourself as an administrator are published at once.
+
+## Breeds and EMS colours
+
+Add or delete breed codes and EMS colour codes. Each EMS colour can be tied to a breed. Deleting a breed does not delete cats (their breed code is plain text); EMS colours that pointed to it simply lose the link.
+
+## Users
+
+Search accounts by name or email and tick **Administrator** to promote someone. You cannot remove your own administrator rights, so there is always at least one.
+
+## Backup
+
+Each of cats, breeds and EMS colours can be downloaded as a CSV file and imported again. The files use the layout of the original Find A Cat database, so they stay readable by older tools.
+
+- **Importing updates rows with the same id and never deletes anything.** Re-importing a backup after a mistake restores the rows in it.
+- Cat exports also carry the owner and approval status. They are restored when present, so a backup brings cats back published or waiting as they were.
+- Parent links that point to an unknown cat, impossible dates and loops in a pedigree are not fatal: the row is imported, the bad value is cleared and a warning is listed (the first 200).
+- **Danger zone:** deletes every row of one table. Type `DELETE` to confirm. Download a backup first.
+
+Make a backup before every upgrade. For a full copy of the data also export the database from cPanel (phpMyAdmin), which includes user accounts that the CSV files do not.
+
+## Importing the original findacat.eu database
+
+Export three tables from the old database as CSV (phpMyAdmin → Export → CSV) and import them in this order, because later files refer to earlier ones:
+
+1. `breeds`
+2. `ems_colors` (the **EMS colours** block of the Backup tab)
+3. `cats`
+
+Ids are kept, so you can repeat the import. The placeholder cat the old site used as parent of unknown parents is dropped and the link is left empty. Old accounts, couples and cat metadata are not imported; people register again.

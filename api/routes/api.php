@@ -1,20 +1,23 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminBackupController;
 use App\Http\Controllers\Api\AdminBreedController;
 use App\Http\Controllers\Api\AdminCatController;
 use App\Http\Controllers\Api\AdminEmsController;
 use App\Http\Controllers\Api\AdminUserController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatController;
+use App\Http\Controllers\Api\InstallController;
 use App\Http\Controllers\Api\LookupController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => [
     'status' => 'ok',
     'app' => config('app.name'),
 ]);
+
+Route::get('/install', [InstallController::class, 'form']);
+Route::post('/install', [InstallController::class, 'run'])->middleware('throttle:10,1');
 
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');

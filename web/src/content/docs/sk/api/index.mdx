@@ -1,18 +1,71 @@
 ---
 title: Referencia API
-description: JSON API, na ktorom stojí web.
+description: JSON API, ktoré stojí za webom.
 section: api
 order: 0
-draft: true
 ---
-API je dostupné pod `/api` na tej istej doméne ako web a používa relácie cez cookies.
+API beží pod `/api` na rovnakej doméne ako web. Každá odpoveď je JSON; posielajte `Accept: application/json`.
 
-## Plánované koncové body
+## Prihlásenie
 
-| Oblasť | Účel |
+Prehliadač používa relácie v cookies (Laravel Sanctum, režim SPA). Pred prvou požiadavkou, ktorá niečo mení, zavolajte `GET /api/sanctum/csrf-cookie` a potom pri každom `POST`, `PUT`, `PATCH` a `DELETE` posielajte hodnotu cookie `XSRF-TOKEN` v hlavičke `X-XSRF-TOKEN`. Požiadavky musia prichádzať z rovnakej stránky. API tokeny neexistujú.
+
+Chyby používajú štandardné stavové kódy. Neplatný vstup vracia `422` s `{ "message": …, "errors": { pole: [správy] } }`. Neoverené účty dostanú `403` pri koncových bodoch, ktoré vyžadujú overený e-mail.
+
+## Verejné koncové body
+
+| Metóda a cesta | Účel |
 | --- | --- |
-| Účty | Registrácia, overenie e-mailu, prihlásenie, obnova hesla |
-| Mačky | Hľadanie, čítanie, vytvorenie, úprava, zmazanie |
-| Rodokmeň | Predkovia mačky ako dáta pre strom alebo graf |
-| Inbreeding | Koeficient mačky alebo dvojice kocúr a mačka |
-| Plemená a EMS | Referenčné zoznamy |
+| `GET /health` | Kontrola dostupnosti |
+| `GET /cats` | Hľadanie. Parametre: `q`, `exact`, `sex` (`male`/`female`), `breed_code`, `ems_code`, `born`, `reg_number`, `per_page` (max 100). Stránkované |
+| `GET /cats/{id}` | Jedna mačka s `inbreeding`, `sire`, `dam`, `children` a `can_edit` |
+| `GET /cats/{id}/pedigree` | Strom predkov. Parameter: `generations` (1–6) |
+| `GET /test-mating` | Parametre: `sire`, `dam`, voliteľne `generations`. Vráti `inbreeding` pre predstavené mačiatko a stromy `sire` a `dam` |
+| `GET /birthdays` | Mačky s narodeninami dnes alebo čoskoro |
+| `GET /breeds`, `GET /ems` | Referenčné zoznamy (`/ems` prijíma `breed_id`) |
+| `GET /stats` | Počty mačiek (spolu, samce, samice, žijúce, uhynuté, s fotografiou) |
+
+Vo verejných výsledkoch sú len schválené mačky. Koeficient `inbreeding` je zlomok medzi 0 a 1.
+
+## Účty
+
+| Metóda a cesta | Účel |
+| --- | --- |
+| `POST /register` | `name`, `email`, `password`, `password_confirmation`. Odošle overovací e-mail |
+| `POST /login`, `POST /logout` | Začiatok a koniec relácie |
+| `GET /email/verify/{id}/{hash}` | Podpísaný odkaz z e-mailu; presmeruje na web |
+| `POST /email/resend` | Znova odoslať overovací e-mail |
+| `POST /forgot-password`, `POST /reset-password` | Odkaz na obnovu hesla v e-maile |
+| `GET /user`, `PATCH /user` | Prihlásený používateľ (`is_admin`, `verified`, …) a zmeny profilu |
+
+## Mačky prihláseného používateľa
+
+Vyžadujú overený e-mail.
+
+| Metóda a cesta | Účel |
+| --- | --- |
+| `GET /my/cats` | Vaše mačky so stavom schválenia |
+| `POST /cats` | Vytvoriť. Povinné sú `name` a `sex`; voliteľné `sire_id`, `dam_id`, `born_on`, `died_on`, tituly, `breed_code`, `ems_code`, `reg_number`, `breeder`, `owner_name`, `country`, `chip_number`, `photo`, `notes`. Vráti `moderation_status`: `pending`, alebo `approved` pre administrátorov |
+| `PUT /cats/{id}` | Upraviť (vlastník alebo administrátor) |
+| `DELETE /cats/{id}` | Zmazať (vlastník alebo administrátor) |
+
+Rodičia sa kontrolujú: otec musí byť samec, matka samica, obaja schválení (alebo vaši) a mačka sa nemôže stať vlastným predkom.
+
+## Koncové body administrátora
+
+Všetky pod `/admin`, len pre administrátorov.
+
+| Metóda a cesta | Účel |
+| --- | --- |
+| `GET /admin/cats?status=` | Mačky podľa stavu (predvolene `pending`) |
+| `POST /admin/cats/{id}/approve`, `…/reject` | Schvaľovanie |
+| `POST /admin/breeds`, `PUT`/`DELETE /admin/breeds/{id}` | Plemená (`code`, `name`) |
+| `POST /admin/ems`, `PUT`/`DELETE /admin/ems/{id}` | Farby EMS (`code`, `english_name`, `breed_id`) |
+| `GET /admin/users?q=`, `PATCH /admin/users/{id}` | Hľadanie používateľov; nastavenie `is_admin` |
+| `GET /admin/backup/{cats\|breeds\|ems}` | Stiahnuť CSV |
+| `POST /admin/backup/{table}` | Importovať CSV (multipart pole `file`). Vráti `counts` a `warnings` |
+| `DELETE /admin/backup/{table}` | Zmazať všetky riadky; telo `{ "confirm": "DELETE" }` |
+
+## Inštalačná cesta
+
+`GET`/`POST /install` existujú, len kým je v `.env` nastavený `INSTALL_TOKEN`. Pozrite [Inštalácia na zdieľanom hostingu](/sk/docs/admin/).

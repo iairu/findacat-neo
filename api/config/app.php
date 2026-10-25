@@ -57,6 +57,9 @@ return [
     // Where the Astro site lives; email links point here. Same as APP_URL when both share a domain.
     'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
 
+    /** Enables the one-time `/api/install` setup route; leave empty once installed. */
+    'install_token' => env('INSTALL_TOKEN'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

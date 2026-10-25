@@ -88,7 +88,6 @@ class LookupController extends Controller
         }
         $generations = (int) ($data['generations'] ?? 4);
 
-
         return ['data' => [
             'inbreeding' => Inbreeding::forCats([$sire->id, $dam->id])->ofMating($sire->id, $dam->id),
             'sire' => $pedigree->tree($sire, $generations - 1),

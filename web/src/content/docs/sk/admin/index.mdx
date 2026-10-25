@@ -1,19 +1,54 @@
 ---
-title: Správa a vlastný hosting
-description: Prevádzka Find A Cat na bežnom zdieľanom hostingu a čo môže robiť správca.
+title: Inštalácia na zdieľanom hostingu
+description: Nahratie vydania cez FTP, nastavenie a spustenie inštalačnej stránky.
 section: admin
 order: 0
-draft: true
 ---
-## Model hostingu
+Find A Cat je statický web s JSON API v Laraveli pod `/api`. Beží na bežnom FTP/cPanel hostingu: **na serveri nie je potrebné SSH, Node.js ani Composer.**
 
-Web je statická stránka s JSON API v Laraveli pod `/api`. Je navrhnutý pre FTP/cPanel hosting: na serveri nie je potrebný Node.js, SSH ani Composer.
+## Čo hosting potrebuje
 
-## Plánované kapitoly
+- PHP 8.3 alebo novšie s bežnými rozšíreniami (`pdo_mysql`, `mbstring`, `openssl`, `ctype`, `json`, `tokenizer`, `xml`, `fileinfo`).
+- Databázu MySQL alebo MariaDB.
+- Apache s `mod_rewrite` a povoleným `.htaccess` (predvolené v cPaneli).
+- Údaje SMTP na odosielanie potvrdzovacích e-mailov a e-mailov na obnovu hesla.
+- HTTPS. Relácie používajú zabezpečené cookies.
 
-- Nahratie vydania a nastavenie `.env`
-- Spustenie inštalátora a vytvorenie prvého účtu správcu
-- Import databázy z findacat.eu
-- Zálohy, import a export CSV
-- Správa plemien a farieb EMS
-- Schvaľovanie registrácií
+## Zostavenie vydania
+
+Na vlastnom počítači s Node.js a buď Composerom, alebo Dockerom:
+
+```bash
+scripts/build-release https://vasa-domena.example
+```
+
+Skript zostaví web, nainštaluje závislosti PHP bez vývojárskych balíkov a vytvorí `release/findacat-<dátum>.zip`. Na konci vypíše adresu inštalačnej stránky s jednorazovým tokenom.
+
+## Nahratie
+
+Rozbaľte vydanie a nahrajte dva priečinky:
+
+- `public_html/` — jeho obsah patrí do koreňového adresára vašej domény.
+- `findacat-app/` — ak to hosting dovoľuje, nahrajte ho **vedľa** koreňového adresára, nie dovnútra. Ak musí byť v ňom, nechajte ho tak: jeho `.htaccess` odmietne všetky požiadavky.
+
+Priečinky `findacat-app/storage` a `findacat-app/bootstrap/cache` musia byť zapisovateľné (práva 775, alebo 755, ak hosting spúšťa PHP pod vaším používateľom).
+
+## Nastavenie
+
+V `findacat-app/` premenujte `env-template.txt` na `.env` (bodka na začiatku je súčasťou názvu) a doplňte hodnoty `DB_*` a `MAIL_*`. `APP_KEY` a `INSTALL_TOKEN` sú pre toto vydanie už vygenerované. Predvolené nastavenie používa relácie a cache v súboroch a odosiela e-maily okamžite, takže nie je potrebný cron ani spracovateľ fronty.
+
+## Inštalačná stránka
+
+Otvorte adresu, ktorú vypísal skript, `https://vasa-domena.example/api/install?token=…`. Zadajte meno, e-mail a heslo (aspoň 12 znakov) prvého administrátora a stlačte **Run setup**. Vytvoria sa databázové tabuľky a administrátor s už potvrdeným e-mailom.
+
+Potom **zmažte riadok `INSTALL_TOKEN` z `.env`**. Bez tokenu inštalačná stránka neexistuje.
+
+## Aktualizácia
+
+Zostavte nové vydanie a nahrajte ho cez staré, pričom ponecháte svoj `.env` a priečinok `storage/`. Potom znova otvorte inštalačnú stránku s tokenom (riadok do `.env` dočasne vráťte); ak už administrátor existuje, len použije nové migrácie.
+
+## Riešenie problémov
+
+- **`/api/health` ukazuje chybovú stránku:** skontrolujte, či je `findacat-app` tam, kde ho očakáva `public_html/_api/index.php` (vedľa `public_html` alebo v ňom), a či sa `vendor/` nahral celý. Na chvíľu nastavte `APP_DEBUG=true` a pozrite si `storage/logs/laravel.log`.
+- **Po prihlásení vás na ďalšej stránke odhlási:** `APP_URL`, `FRONTEND_URL` a `SANCTUM_STATEFUL_DOMAINS` musia zodpovedať doméne v adresnom riadku, posledná bez `https://`.
+- **Neprichádzajú e-maily:** skontrolujte hodnoty `MAIL_*` a limity SMTP u hostingu. E-maily sa odosielajú okamžite, takže chyby sú v logu.

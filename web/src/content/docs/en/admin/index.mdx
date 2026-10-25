@@ -1,19 +1,54 @@
 ---
-title: Admin and self-hosting
-description: Running Find A Cat on ordinary shared hosting, and what an admin can do.
+title: Installing on shared hosting
+description: Upload a release over FTP, configure it and run the setup page.
 section: admin
 order: 0
-draft: true
 ---
-## Hosting model
+Find A Cat is a static website plus a Laravel JSON API under `/api`. It runs on ordinary FTP/cPanel hosting: **no SSH, Node.js or Composer is needed on the server.**
 
-The site is a static website with a Laravel JSON API under `/api`. It is designed for FTP/cPanel hosting: no Node.js, SSH or Composer is needed on the server.
+## What the host needs
 
-## Planned chapters
+- PHP 8.3 or newer with the usual extensions (`pdo_mysql`, `mbstring`, `openssl`, `ctype`, `json`, `tokenizer`, `xml`, `fileinfo`).
+- A MySQL or MariaDB database.
+- Apache with `mod_rewrite` and `.htaccess` enabled (the default on cPanel).
+- SMTP details for sending confirmation and password-reset emails.
+- HTTPS. Sessions use secure cookies.
 
-- Uploading a release and configuring `.env`
-- Running the installer and creating the first admin account
-- Importing the findacat.eu database
-- Backups, CSV import and export
-- Managing breeds and EMS colours
-- Moderating registrations
+## Build a release
+
+On your own computer, with Node.js, and either Composer or Docker:
+
+```bash
+scripts/build-release https://your-domain.example
+```
+
+This builds the site, installs the PHP dependencies without development packages, and writes `release/findacat-<date>.zip`. The command prints the setup address, which contains a one-time token.
+
+## Upload
+
+Unzip the release and upload two folders:
+
+- `public_html/` — the contents go into your domain's web root.
+- `findacat-app/` — upload it **next to** the web root, not inside it, if your host allows that. If it must live inside the web root, leave it as is: its `.htaccess` refuses all requests.
+
+Make `findacat-app/storage` and `findacat-app/bootstrap/cache` writable (permissions 775, or 755 if your host runs PHP as your user).
+
+## Configure
+
+In `findacat-app/` rename `env-template.txt` to `.env` (the leading dot is part of the name) and fill in the `DB_*` and `MAIL_*` values. `APP_KEY` and `INSTALL_TOKEN` are already generated for this release. The default settings use file-based sessions and cache and send mail immediately, so no cron job or queue worker is needed.
+
+## Run the setup page
+
+Open the address printed by the build script, `https://your-domain.example/api/install?token=…`. Enter a name, email and password (12 characters or more) for the first administrator and press **Run setup**. This creates the database tables and the administrator, whose email is already confirmed.
+
+Afterwards **delete the `INSTALL_TOKEN` line from `.env`**. Without a token the setup page does not exist.
+
+## Upgrade
+
+Build a new release and upload it over the old one, keeping your `.env` and `storage/` folder. Then open the setup page again with the token from your `.env` (add the line back temporarily); with an administrator already present it only applies new migrations.
+
+## Troubleshooting
+
+- **`/api/health` shows an error page:** check that `findacat-app` is where `public_html/_api/index.php` expects it (next to `public_html`, or inside it) and that `vendor/` was uploaded completely. Set `APP_DEBUG=true` briefly to see the error, and look at `storage/logs/laravel.log`.
+- **You can sign in but are logged out on the next page:** `APP_URL`, `FRONTEND_URL` and `SANCTUM_STATEFUL_DOMAINS` must match the domain in the address bar, without `https://` in the last one.
+- **No emails arrive:** check the `MAIL_*` values and your host's SMTP limits. Emails are sent immediately, so errors appear in the log.

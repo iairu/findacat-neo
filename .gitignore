@@ -8,3 +8,4 @@
 *.swp
 *.tmp
 *.temp
+/release/

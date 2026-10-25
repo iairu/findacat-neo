@@ -1,0 +1,40 @@
+---
+title: Prevádzka stránky
+description: Schvaľovanie, plemená a farby EMS, používatelia, zálohy a import starej databázy.
+section: admin
+order: 1
+---
+Administrátori vidia na [stránke účtu](/sk/account/) tlačidlo **Správa**. Má päť kariet.
+
+## Na schválenie
+
+Tu čakajú mačky pridané bežnými používateľmi. **Schváliť** mačku zverejní; **Zamietnuť** ju skryje pred všetkými okrem vlastníka a administrátorov. Mačky, ktoré pridáte ako administrátor, sa zverejnia hneď.
+
+## Plemená a farby EMS
+
+Pridávajte alebo mažte kódy plemien a kódy farieb EMS. Každú farbu EMS možno viazať na plemeno. Zmazanie plemena nemaže mačky (ich kód plemena je obyčajný text); farby EMS, ktoré naň odkazovali, len stratia väzbu.
+
+## Používatelia
+
+Vyhľadajte účty podľa mena alebo e-mailu a zaškrtnutím **Administrátor** niekoho povýšte. Vlastné práva administrátora si odobrať nemôžete, takže vždy zostane aspoň jeden.
+
+## Záloha
+
+Mačky, plemená aj farby EMS si môžete stiahnuť ako súbor CSV a znova importovať. Súbory majú rozloženie pôvodnej databázy Find A Cat, takže ostávajú čitateľné aj pre staršie nástroje.
+
+- **Import aktualizuje riadky s rovnakým id a nič nemaže.** Opätovný import zálohy po chybe obnoví riadky, ktoré obsahuje.
+- Export mačiek obsahuje aj vlastníka a stav schválenia. Ak sú v súbore, pri importe sa obnovia, takže záloha vráti mačky zverejnené alebo čakajúce tak, ako boli.
+- Odkazy na neznámeho rodiča, nemožné dátumy a slučky v rodokmeni nie sú fatálne: riadok sa naimportuje, chybná hodnota sa vymaže a zobrazí sa upozornenie (prvých 200).
+- **Nebezpečná zóna:** zmaže všetky riadky jednej tabuľky. Na potvrdenie napíšte `DELETE`. Najprv si stiahnite zálohu.
+
+Zálohu urobte pred každou aktualizáciou. Na úplnú kópiu dát exportujte aj databázu z cPanelu (phpMyAdmin); tá obsahuje aj používateľské účty, ktoré súbory CSV neobsahujú.
+
+## Import pôvodnej databázy findacat.eu
+
+Z pôvodnej databázy exportujte tri tabuľky ako CSV (phpMyAdmin → Export → CSV) a importujte ich v tomto poradí, pretože neskoršie súbory odkazujú na skoršie:
+
+1. `breeds`
+2. `ems_colors` (blok **Farby EMS** na karte Záloha)
+3. `cats`
+
+Id sa zachovávajú, import teda môžete opakovať. Zástupná mačka, ktorú stará stránka používala ako rodiča pri neznámych rodičoch, sa vynechá a odkaz ostane prázdny. Staré účty, páry a metadáta mačiek sa neimportujú; ľudia sa zaregistrujú znova.

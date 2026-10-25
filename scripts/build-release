@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Builds a zip for FTP/cPanel hosting: the static site plus the Laravel API with vendor/ included.
+#
+#   scripts/build-release [https://your-domain.example]
+#
+# Needs Node.js + npm, and either Composer or Docker (composer:2 image), plus zip or python3.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SITE_URL="${1:-https://findacat.eu}"
+HOST="${SITE_URL#*://}"; HOST="${HOST%%/*}"
+STAMP="$(date +%Y%m%d-%H%M)"
+OUT="$ROOT/release"
+STAGE="$OUT/stage"
+ZIP="$OUT/findacat-$STAMP.zip"
+
+rm -rf "$STAGE"
+mkdir -p "$STAGE/public_html/_api" "$STAGE/findacat-app"
+
+echo "==> Building the static site"
+(cd "$ROOT/web" && npm ci --silent && npm run build --silent)
+cp -R "$ROOT/web/dist/." "$STAGE/public_html/"
+
+echo "==> Copying the API"
+tar -C "$ROOT/api" \
+  --exclude='./vendor' --exclude='./tests' --exclude='./node_modules' --exclude='./.env' \
+  --exclude='./.claude' --exclude='./.mcp.json' --exclude='./boost.json' --exclude='./CLAUDE.md' \
+  --exclude='./storage/logs/*' --exclude='./storage/framework/*/*' --exclude='*.sqlite' --exclude='./database/demo' \
+  -cf - . | tar -C "$STAGE/findacat-app" -xf -
+mkdir -p "$STAGE/findacat-app/storage/logs" \
+  "$STAGE/findacat-app/storage/framework/"{cache/data,sessions,views} \
+  "$STAGE/findacat-app/bootstrap/cache"
+
+echo "==> Installing production dependencies"
+COMPOSER_ARGS=(install --no-dev --optimize-autoloader --no-interaction --no-progress)
+if command -v composer >/dev/null; then
+  (cd "$STAGE/findacat-app" && composer "${COMPOSER_ARGS[@]}")
+else
+  docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer \
+    -v "$STAGE/findacat-app:/app" -w /app composer:2 composer "${COMPOSER_ARGS[@]}"
+fi
+
+echo "==> Writing the front controller and rewrite rules"
+cat > "$STAGE/public_html/_api/index.php" <<'PHP'
+<?php
+
+// Front controller for /api/*. Looks for the app next to public_html first, then inside it.
+$app = is_dir(__DIR__.'/../../findacat-app') ? __DIR__.'/../../findacat-app' : __DIR__.'/../findacat-app';
+
+// Requests arrive as /api/..., so make Laravel treat this file as the web root script.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['PHP_SELF'] = '/index.php';
+
+define('LARAVEL_START', microtime(true));
+require $app.'/vendor/autoload.php';
+(require_once $app.'/bootstrap/app.php')->handleRequest(Illuminate\Http\Request::capture());
+PHP
+
+cat > "$STAGE/public_html/.htaccess" <<'HT'
+Options -Indexes
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Pass auth and CSRF headers through to PHP.
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  RewriteCond %{HTTP:x-xsrf-token} .
+  RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+  # Everything under /api goes to Laravel.
+  RewriteRule ^api(/.*)?$ _api/index.php [L]
+
+  # Never serve the app folder if it was uploaded inside public_html.
+  RewriteRule ^findacat-app(/|$) - [F,L]
+</IfModule>
+HT
+echo "Require all denied" > "$STAGE/findacat-app/.htaccess"
+
+echo "==> Writing the environment template"
+KEY="base64:$(head -c 32 /dev/urandom | base64)"
+TOKEN="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 32)"
+cat > "$STAGE/findacat-app/env-template.txt" <<ENV
+# Fill in the DB_* and MAIL_* values, then rename this file to .env (keep the leading dot).
+APP_NAME="Find A Cat"
+APP_ENV=production
+APP_KEY=$KEY
+APP_DEBUG=false
+APP_URL=$SITE_URL
+FRONTEND_URL=$SITE_URL
+LOG_CHANNEL=single
+LOG_LEVEL=warning
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+
+SESSION_DRIVER=file
+SESSION_SECURE_COOKIE=true
+SANCTUM_STATEFUL_DOMAINS=$HOST
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+
+MAIL_MAILER=smtp
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=noreply@$HOST
+MAIL_FROM_NAME="Find A Cat"
+
+# Setup page: $SITE_URL/api/install?token=...
+# Delete this line after the first run.
+INSTALL_TOKEN=$TOKEN
+ENV
+
+echo "==> Zipping"
+if command -v zip >/dev/null; then
+  (cd "$STAGE" && zip -qr "$ZIP" public_html findacat-app)
+else
+  (cd "$STAGE" && python3 -m zipfile -c "$ZIP" public_html findacat-app)
+fi
+rm -rf "$STAGE"
+
+echo
+echo "Release: $ZIP"
+echo "Setup:   $SITE_URL/api/install?token=$TOKEN"

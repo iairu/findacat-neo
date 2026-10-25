@@ -3,16 +3,69 @@ title: API reference
 description: The JSON API behind the website.
 section: api
 order: 0
-draft: true
 ---
-The API is served under `/api` on the same domain as the website and uses cookie-based sessions.
+The API lives under `/api` on the same domain as the website. Every response is JSON; send `Accept: application/json`.
 
-## Planned endpoints
+## Authentication
 
-| Area | Purpose |
+The browser uses cookie sessions (Laravel Sanctum, SPA mode). Before the first state-changing request fetch `GET /api/sanctum/csrf-cookie`, then send the `XSRF-TOKEN` cookie value back in the `X-XSRF-TOKEN` header with every `POST`, `PUT`, `PATCH` and `DELETE`. Requests must come from the same site. There are no API tokens.
+
+Errors use standard status codes. Validation failures return `422` with `{ "message": …, "errors": { field: [messages] } }`. Unverified accounts get `403` on endpoints that need a verified email.
+
+## Public endpoints
+
+| Method and path | Purpose |
 | --- | --- |
-| Accounts | Register, verify email, log in, reset password |
-| Cats | Search, read, create, update, delete |
-| Pedigree | Ancestors of a cat, as tree or chart data |
-| Inbreeding | Coefficient for a cat or for a sire and dam pair |
-| Breeds and EMS | Reference lists |
+| `GET /health` | Liveness check |
+| `GET /cats` | Search. Query: `q`, `exact`, `sex` (`male`/`female`), `breed_code`, `ems_code`, `born`, `reg_number`, `per_page` (max 100). Paginated |
+| `GET /cats/{id}` | One cat with `inbreeding`, `sire`, `dam`, `children` and `can_edit` |
+| `GET /cats/{id}/pedigree` | Ancestor tree. Query: `generations` (1–6) |
+| `GET /test-mating` | Query: `sire`, `dam`, optional `generations`. Returns `inbreeding` for an imaginary kitten, plus the `sire` and `dam` trees |
+| `GET /birthdays` | Cats with a birthday today or soon |
+| `GET /breeds`, `GET /ems` | Reference lists (`/ems` accepts `breed_id`) |
+| `GET /stats` | Counts of cats (total, males, females, living, deceased, with photo) |
+
+Only approved cats appear in public results. The coefficient `inbreeding` is a fraction between 0 and 1.
+
+## Accounts
+
+| Method and path | Purpose |
+| --- | --- |
+| `POST /register` | `name`, `email`, `password`, `password_confirmation`. Sends a verification email |
+| `POST /login`, `POST /logout` | Start and end the session |
+| `GET /email/verify/{id}/{hash}` | Signed link from the email; redirects to the site |
+| `POST /email/resend` | Send the verification email again |
+| `POST /forgot-password`, `POST /reset-password` | Emailed reset link |
+| `GET /user`, `PATCH /user` | The signed-in user (`is_admin`, `verified`, …) and profile changes |
+
+## Cats of a signed-in user
+
+Need a verified email.
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /my/cats` | Your cats with their moderation status |
+| `POST /cats` | Create. `name` and `sex` are required; `sire_id`, `dam_id`, `born_on`, `died_on`, titles, `breed_code`, `ems_code`, `reg_number`, `breeder`, `owner_name`, `country`, `chip_number`, `photo`, `notes` are optional. Returns `moderation_status`: `pending`, or `approved` for administrators |
+| `PUT /cats/{id}` | Update (owner or administrator) |
+| `DELETE /cats/{id}` | Delete (owner or administrator) |
+
+Parents are checked: the sire must be male, the dam female, both approved (or your own), and a cat cannot become its own ancestor.
+
+## Administrator endpoints
+
+All under `/admin`, administrators only.
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /admin/cats?status=` | Cats by status (`pending` by default) |
+| `POST /admin/cats/{id}/approve`, `…/reject` | Moderate |
+| `POST /admin/breeds`, `PUT`/`DELETE /admin/breeds/{id}` | Breeds (`code`, `name`) |
+| `POST /admin/ems`, `PUT`/`DELETE /admin/ems/{id}` | EMS colours (`code`, `english_name`, `breed_id`) |
+| `GET /admin/users?q=`, `PATCH /admin/users/{id}` | Search users; set `is_admin` |
+| `GET /admin/backup/{cats\|breeds\|ems}` | Download CSV |
+| `POST /admin/backup/{table}` | Import CSV (multipart field `file`). Returns `counts` and `warnings` |
+| `DELETE /admin/backup/{table}` | Delete all rows; body `{ "confirm": "DELETE" }` |
+
+## Setup route
+
+`GET`/`POST /install` exist only while `INSTALL_TOKEN` is set in `.env`. See [Installing on shared hosting](/docs/admin/).

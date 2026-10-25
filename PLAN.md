@@ -1,6 +1,6 @@
 # Find A Cat Neo: rewrite plan
 
-Rewrite of `old_project/` (Laravel 8, Silsilah fork) into a static Astro site plus a Laravel JSON API.
+Rewrite of the old Laravel 8 app (a Silsilah fork, removed from the tree in phase 7; see git history before commit `Phase 7`) into a static Astro site plus a Laravel JSON API.
 
 ## Decisions
 
@@ -19,8 +19,7 @@ Rewrite of `old_project/` (Laravel 8, Silsilah fork) into a static Astro site pl
 findacat-neo/
 ├─ api/          Laravel, JSON API only
 ├─ web/          Astro: homepage, docs, portal
-├─ scripts/      release builder for FTP deploys
-└─ old_project/  reference only; removed once features are matched
+└─ scripts/      release builder for FTP deploys
 ```
 
 ## Deployment (FTP/cPanel)
@@ -48,7 +47,7 @@ findacat-neo/
 - Phase 6 done: admin API (`/api/admin/breeds`, `/ems`, `/users`, `/backup/{cats|breeds|ems}` for CSV export, import and clear with `confirm=DELETE`) and an admin page in `web/` (approval queue, breeds, EMS colours, users, backup). Exports use the legacy CSV layout plus `owner_id` and `moderation_status`, which an import restores when present; 47 API tests pass. Driven end to end in a headless browser (queue, breeds, EMS, users, CSV round trip).
 - PawPeds: confirm whether the old integration scrapes pages (fragile) before porting it.
 - License: old code derives from Silsilah (MIT); keep the notice wherever its logic is carried over.
-- License (GPL): `old_project/src/public/js/inbreeding.js` is Sam Kauffman's Inbreeding Calculator, GPL-3.0. Translating it to PHP would make the port GPL. Write the COI service from Wright's formula and use the old script only as a black-box oracle for test expectations, or decide deliberately to license the project GPL.
+- License (GPL): the old `public/js/inbreeding.js` (in git history) is Sam Kauffman's Inbreeding Calculator, GPL-3.0. Translating it to PHP would make the port GPL. Write the COI service from Wright's formula and use the old script only as a black-box oracle for test expectations, or decide deliberately to license the project GPL.
 - Hosting: Laravel 13 needs PHP 8.3+. Confirm the target host offers it before phase 4.
 
 ## Status
@@ -60,3 +59,5 @@ findacat-neo/
 - Phase 5 done: portal pages in `web/` (EN and SK): cat search, cat page with inbreeding and pedigree tree, test mating, birthdays, sign in/register/reset, account with own cats, and a cat editor. They are static shells that call `/api` from the browser (`web/src/lib/portal.ts`); `astro dev` proxies `/api` to `localhost:8000`. Verified in a headless browser against a seeded API; no automated browser tests are committed yet. Admin screens (moderation queue UI, backups, CSV, breed/EMS editing) are phase 6.
 - PawPeds: `old_project` calls a `PawPedsService` that does not exist in the repo (only the controller and a JS button), so the old integration never worked. PawPeds' robots.txt disallows `/db/`, where the pedigree database lives, so an automated fetcher is on hold until PawPeds agrees to it.
 - Local PHP is not installed; run Composer and Artisan through the `composer:2` Docker image (see `api/README.md`).
+- Phase 7 done: docs (user guide, installing on shared hosting, running the site, API reference; EN and SK), `scripts/build-release` (static site + `findacat-app/` with production `vendor/`, `.htaccess` routing `/api` to Laravel, generated `APP_KEY` and `INSTALL_TOKEN`), and the token-protected `/api/install` route (migrations, first admin, re-run for upgrades). Checked end to end: the zip served by Apache on PHP 8.3 installs, signs in, adds and finds a cat. `old_project/` is removed except the demo CSVs, now in `api/database/demo/`; the thesis PDFs are only in git history. Dependencies are pinned to PHP 8.3 (`config.platform.php`) because the latest Symfony needs 8.4.
+- Not done: PawPeds (see above), a committed browser test suite, comparing COI against the old `inbreeding.js` on real pedigrees.

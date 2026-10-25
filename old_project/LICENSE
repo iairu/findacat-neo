@@ -1,3 +1,0 @@
-Find A Cat project (`src` folder) is based on Silsilah (https://github.com/nafiesl/silsilah) and open-sourced software licensed under the [MIT license](src/LICENSE) with the exception of my thesis (`thesis` folder) and database demo files used to demonstrate import capabilities of the web interface (`db_demo` folder).
-
-Thesis and database files are © 2024 Ondrej Špánik (iairu). All rights reserved. Redistribution without permission is prohibited; feel free to link to the GitHub repository instead. Personal use is fine, commercial use is not granted.
