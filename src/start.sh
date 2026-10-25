@@ -1,1 +1,0 @@
-docker build -t findacat . && docker run -d -p 8000:8000 findacat
