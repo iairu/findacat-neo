@@ -1,0 +1,10 @@
+id,full_name,gender_id,sire_id,dam_id,dob,titles_before_name,titles_after_name,ems_color,breed,breeder,dod,doo
+u1,Unknown Origin,2,u1,u1,1111-11-11,,-,-,-,,,
+a,Grand Sire,1,u1,u1,2002-11-16,Ch,del Fiore,w 62,PER,,,
+b,Grand Dam,2,u1,u1,2002-11-16,,-,n,PER,"Doe, John",,
+c,Sire,1,a,b,2003-02-30,,-,n,PER,,2015-01-02,2003-03-01
+d,Dam,2,u1,u1,2003-05-22,,-,n,PER,,,
+e,Kitten,2,c,d,2004-06-01,,-,n,PER,,,
+f,Stray Kitten,1,missing,d,2004-06-01,,-,n,PER,,,
+x,Loop X,1,y,d,2004-06-01,,-,n,PER,,,
+y,Loop Y,1,x,d,2004-06-01,,-,n,PER,,,

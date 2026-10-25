@@ -52,4 +52,5 @@ findacat-neo/
 ## Status
 
 - Phase 1 done: `web/` (Astro, amber theme, EN/SK, docs with search) and `api/` (Laravel 13, Sanctum cookie auth, `/api/health`).
+- Phase 2 done: breeds, EMS colours and cats tables (legacy ids kept, plus `owner_id` and `moderation_status`), and `php artisan legacy:import --breeds= --ems= --cats=` for the old CSV exports. It drops the self-parented placeholder cat, nulls unknown dates and parents, and breaks ancestry cycles, reporting each as a warning. Not imported: old `cat_metadata`, `couples` and users (they re-register).
 - Local PHP is not installed; run Composer and Artisan through the `composer:2` Docker image (see `api/README.md`).
