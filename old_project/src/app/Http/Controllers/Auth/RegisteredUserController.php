@@ -20,7 +20,8 @@ class RegisteredUserController extends Controller
      */
     public function create()
     {
-        return view('auth.register');
+        $isFirstUser = User::count() === 0;
+        return view('auth.register', compact('isFirstUser'));
     }
 
     /**
@@ -39,16 +40,19 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Check if this is the first user
+        $isFirstUser = User::count() === 0;
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_admin' => $isFirstUser ? true : false,
         ]);
 
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return view('auth.register');
+        // Do not auto-login after registration
+        return redirect()->route('login')->with('success', __('app.user_registered_success'));
     }
 }

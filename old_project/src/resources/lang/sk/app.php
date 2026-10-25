@@ -60,6 +60,19 @@ return [
     'delete'            => 'Vymazať',
     'cancel'            => 'Zrušiť',
 
-    'open_in_google_map' => 'Otvoriť v Google Mapách',
-    'data_not_available' => 'Dáta nedostupné.',
+    'open_in_google_map' => 'Otvoriť v Google Maps',
+    'data_not_available' => 'Dáta nie sú dostupné.',
+    
+    // Error and success messages
+    'no_search_results' => 'Neboli nájdené žiadne mačky zodpovedajúce vašim kritériám vyhľadávania. Skúste iné vyhľadávacie výrazy.',
+    'no_cats_in_database' => 'V databáze nie sú k dispozícii žiadne mačky. Prosím, najskôr pridajte mačky pred testovaním párenia.',
+    'cat_registered_success' => 'Mačka bola úspešne zaregistrovaná!',
+    'cat_updated_success' => 'Mačka bola úspešne aktualizovaná!',
+    'user_registered_success' => 'Používateľ bol úspešne zaregistrovaný! Prosím, prihláste sa pre pokračovanie.',
+    'first_user_admin_notice' => 'Budete prvý používateľ, preto administrátor!',
+    'invalid_breed_selection' => 'Prosím, vyberte platné plemená pre samca aj samicu.',
+    'invalid_cat_selection' => 'Prosím, vyberte platné mačky pre samca aj samicu.',
+    'sire_set_success' => 'Otec bol úspešne nastavený!',
+    'dam_set_success' => 'Matka bola úspešne nastavená!',
+    'child_added_success' => 'Potomok bol úspešne pridaný!',
 ];

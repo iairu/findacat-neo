@@ -62,4 +62,17 @@ return [
 
     'open_in_google_map' => 'Open in Google Map',
     'data_not_available' => 'Data not available.',
+    
+    // Error and success messages
+    'no_search_results' => 'No cats found matching your search criteria. Please try different search terms.',
+    'no_cats_in_database' => 'No cats available in the database. Please add cats first before testing mating.',
+    'cat_registered_success' => 'Cat registered successfully!',
+    'cat_updated_success' => 'Cat updated successfully!',
+    'user_registered_success' => 'User registered successfully! Please login to continue.',
+    'first_user_admin_notice' => 'You will be the first user, therefore admin!',
+    'invalid_breed_selection' => 'Please select valid breeds for both male and female cats.',
+    'invalid_cat_selection' => 'Please select valid cats for both male and female.',
+    'sire_set_success' => 'Sire set successfully!',
+    'dam_set_success' => 'Dam set successfully!',
+    'child_added_success' => 'Child added successfully!',
 ];

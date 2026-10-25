@@ -11,18 +11,18 @@
             <li class="list-group-item">
                 @if ($cat->gender_id == 1)
                     @if (null !== $child->d())
-                    <div class="parent">{{ __('cat.with') }} ({{ $child->d()->gender }}) {{ $child->d()->titles_before_name() }} {{ $child->d()->profileLink() }} {{ $child->d()->titles_after_name() }} {{ $child->d()->breed }} {{ $child->d()->ems_color }} {{ $child->d()->dob() }}</div>
+                    <div class="parent">{{ __('cat.with') }} ({{ $child->d()->gender }}) {{ $child->d()->titles_before_name() }} {{ $child->d()->profileLink() }} {{ $child->d()->titles_after_name() }} {{ $child->d()->breed ?? '' }} {{ $child->d()->ems_color ?? '' }} {{ $child->d()->dob() }}</div>
                     @else
                     <div class="parent">{{ __('cat.with') }} {{ __('cat.unknown_parent') }}</div>
                     @endif
-                    <div class="child" style="margin-left: 17px;">({{ $child->gender }}) {{ $child->titles_before_name() }} {{ $child->profileLink() }} {{ $child->titles_after_name() }} {{ $child->breed }} {{ $child->ems_color }} {{ $child->dob() }}</div>
+                    <div class="child" style="margin-left: 17px;">({{ $child->gender }}) {{ $child->titles_before_name() }} {{ $child->profileLink() }} {{ $child->titles_after_name() }} {{ $child->breed ?? '' }} {{ $child->ems_color ?? '' }} {{ $child->dob() }}</div>
                 @else
                     @if (null !== $child->s())
-                    <div class="parent">{{ __('cat.with') }} ({{ $child->s()->gender }}) {{ $child->s()->titles_before_name() }} {{ $child->s()->profileLink() }} {{ $child->s()->titles_after_name() }} {{ $child->s()->breed }} {{ $child->s()->ems_color }} {{ $child->s()->dob() }}</div>
+                    <div class="parent">{{ __('cat.with') }} ({{ $child->s()->gender }}) {{ $child->s()->titles_before_name() }} {{ $child->s()->profileLink() }} {{ $child->s()->titles_after_name() }} {{ $child->s()->breed ?? '' }} {{ $child->s()->ems_color ?? '' }} {{ $child->s()->dob() }}</div>
                     @else
                     <div class="parent">{{ __('cat.with') }} {{ __('cat.unknown_parent') }}</div>
                     @endif
-                    <div class="child" style="margin-left: 17px;">({{ $child->gender }}) {{ $child->titles_before_name() }} {{ $child->profileLink() }} {{ $child->titles_after_name() }} {{ $child->breed }} {{ $child->ems_color }} {{ $child->dob() }}</div>
+                    <div class="child" style="margin-left: 17px;">({{ $child->gender }}) {{ $child->titles_before_name() }} {{ $child->profileLink() }} {{ $child->titles_after_name() }} {{ $child->breed ?? '' }} {{ $child->ems_color ?? '' }} {{ $child->dob() }}</div>
                 @endif
             </li>
             @endif

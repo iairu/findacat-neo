@@ -75,6 +75,16 @@ class Cat extends Model
         return $this->gender_id == 1 ? trans('app.male_code') : trans('app.female_code');
     }
 
+    public function getBreedAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    public function getEmsColorAttribute($value)
+    {
+        return $value ?? '';
+    }
+
     public function setSire(Cat $sire)
     {
         if ($sire->gender_id == 1) {
@@ -120,22 +130,28 @@ class Cat extends Model
     }
 
     public function findBreedName() {
+        if (!$this->breed) {
+            return '';
+        }
         $foundBreed = Breed::where('breed', '=', $this->breed)->first();
         if ($foundBreed instanceof \Illuminate\Database\Eloquent\Model) {
-            return $foundBreed->name;
+            return $foundBreed->name ?? '';
         }
-        return 'Not in database';
+        return '';
     }
 
     public function findEMS() {
+        if (!$this->breed || !$this->ems_color) {
+            return '';
+        }
         $foundBreed = Breed::where('breed', '=', $this->breed)->first();
         if ($foundBreed instanceof \Illuminate\Database\Eloquent\Model) {
             $foundEMS = Ems::where('breed_id', '=', $foundBreed->id)->where('ems', '=', $this->ems_color)->first();
             if ($foundEMS instanceof \Illuminate\Database\Eloquent\Model) {
-                return $foundEMS->english;
+                return $foundEMS->english ?? '';
             }
         }
-        return 'Not in database';
+        return '';
     }
 
     public function childs()
@@ -159,7 +175,7 @@ class Cat extends Model
     }
 
     public function dob() {
-        if ($this->dob == "1111-11-11") {
+        if (!$this->dob || $this->dob == "1111-11-11") {
             return "";
         } else {
             return $this->dob;
@@ -200,7 +216,8 @@ class Cat extends Model
      */
     public function getBreed()
     {
-        return Breed::select('breed','id')->where('breed',$this->breed)->pluck('id')->first();
+        $breedId = Breed::select('breed','id')->where('breed',$this->breed)->pluck('id')->first();
+        return $breedId ? $breedId : 1; // Return 1 as fallback if breed not found
     }
 
     public function titles_before_name() {
@@ -213,6 +230,14 @@ class Cat extends Model
 
     public function full_name() {
         return $this->full_name;
+    }
+
+    public function safeBreed() {
+        return $this->breed ?? '';
+    }
+
+    public function safeEmsColor() {
+        return $this->ems_color ?? '';
     }
 
     public function wifes()

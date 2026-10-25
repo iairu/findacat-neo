@@ -52,6 +52,25 @@
     @endif
 </h2>
 
+<!-- Success Message -->
+@if(session('success'))
+<div class="alert alert-success alert-dismissible" role="alert" style="margin: 20px 0;">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    {{ session('success') }}
+</div>
+@endif
+
+<!-- Error Message -->
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible" role="alert" style="margin: 20px 0;">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    {{ session('error') }}
+</div>
+@endif
 
 {{ Form::open(['method' => 'get','class' => '']) }}
 <div class="input-group" style="width:100%">
@@ -86,6 +105,12 @@
 
 @if (request('full_name') || request('ems_color') || request('dob') || request('breed') || request('reg_num'))
 <br>
+
+@if($cats->total() === 0)
+<div class="alert alert-info" role="alert" style="margin: 20px 0; text-align: center;">
+    <strong>{{ __('app.no_search_results') }}</strong>
+</div>
+@else
 {{ $cats->appends(Request::except('page'))->render() }}
 @foreach ($cats->chunk(4) as $chunkedUser)
 <div class="row">
@@ -115,7 +140,7 @@
                 @endif
                 @endif
                 <hr style="margin: 5px 0;">
-                <div>{{ $cat->breed }} {{ $cat->ems_color }} <span style="float: right;">{{ $cat->dob() }}</span></div>
+                <div>{{ $cat->breed ?? '' }} {{ $cat->ems_color ?? '' }} <span style="float: right;">{{ $cat->dob() }}</span></div>
                 <hr style="margin: 5px 0;">
                 <div>{{ trans('cat.sire') }} : {{ $cat->sire_id ? $cat->sire->full_name : '' }}</div>
                 <div>{{ trans('cat.dam') }} : {{ $cat->dam_id ? $cat->dam->full_name : '' }}</div>
@@ -131,5 +156,6 @@
 @endforeach
 
 {{ $cats->appends(Request::except('page'))->render() }}
+@endif
 @endif
 @endsection

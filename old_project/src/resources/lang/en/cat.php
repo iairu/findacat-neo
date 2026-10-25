@@ -65,5 +65,19 @@ return [
     'display_reg_num' => 'Show registration numbers',
     'delete_confirm_button' => 'Confirm deletion',
     'download_vet_confirmation' => 'Download Vet Confirmation',
-    'download_genetic_tests_file' => 'Download Genetic Tests File'
+    'download_genetic_tests_file' => 'Download Genetic Tests File',
+    
+    // Duplicate cat confirmation
+    'duplicate_warning_title' => 'Duplicate Cat Warning',
+    'similar_cat_exists' => 'Similar cat exists!',
+    'duplicate_warning_message' => 'A cat with the same full name already exists in the database. Please review the comparison below to ensure you want to register this cat.',
+    'comparison' => 'Comparison',
+    'field' => 'Field',
+    'existing_cat' => 'Existing Cat',
+    'new_cat' => 'About to be Registered',
+    'confirm_registration_question' => 'Are you sure you want to continue registering?',
+    'yes_continue_registration' => 'Yes, Continue Registration',
+    'no_cancel' => 'No, Cancel',
+    'tip' => 'Tip',
+    'duplicate_tip_message' => 'You can view the existing cat profile to verify if this is truly a different cat before proceeding with registration.',
 ];

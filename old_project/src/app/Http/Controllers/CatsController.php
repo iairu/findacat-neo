@@ -69,6 +69,13 @@ class CatsController extends Controller
      * @param  \App\Cat  $cat
      * @return \Illuminate\View\View
      */
+
+    /**
+     * Display the specified Cat.
+     *
+     * @param  \App\Cat  $cat
+     * @return \Illuminate\View\View
+     */
     public function show(Cat $cat)
     {
         $catsMariageList = $this->getCatMariageList($cat);
@@ -132,19 +139,65 @@ class CatsController extends Controller
      * @param  \App\Cat  $cat
      * @return \Illuminate\View\View
      */
-    public function test(Breed $breed, Breed $breed2, Cat $cat = null, Cat $cat2 = null, int $generations = 5)
+    public function test($breedId, $breed2Id, $catId, $cat2Id, int $generations = 5)
     {
+        // Check if there are any cats in the database
+        $totalCats = Cat::count();
+        if ($totalCats === 0) {
+            return redirect()->route('cats.search')->with('error', __('app.no_cats_in_database'));
+        }
+
+        // Check if there are any breeds in the database
+        $totalBreeds = Breed::where('id', '>', 1)->count();
+        if ($totalBreeds === 0) {
+            return redirect()->route('cats.search')->with('error', __('app.invalid_breed_selection'));
+        }
+
+        // Try to find breeds, handle missing breeds
+        $breed = Breed::find($breedId);
+        $breed2 = Breed::find($breed2Id);
+        
+        // If breeds don't exist or are placeholders (ID 1), get first available breeds
+        if (!$breed || $breed->id == 1 || !isset($breed->id)) {
+            $breed = Breed::where('id', '>', 1)->orderBy('id')->first();
+        }
+        if (!$breed2 || $breed2->id == 1 || !isset($breed2->id)) {
+            $breed2 = Breed::where('id', '>', 1)->orderBy('id')->first();
+        }
+
+        // Final check if breeds are valid
+        if (!$breed || !$breed2) {
+            return redirect()->route('cats.search')->with('error', __('app.invalid_breed_selection'));
+        }
+
         $breedList = $this->getBreedList();
-        if ($breed) {
-            $malePersonList = $this->getBreedCatList($breed,1);
-        } else {
-            $malePersonList = null;
+        
+        // Get cats for selected breeds
+        $malePersonList = $this->getBreedCatList($breed, 1);
+        $femalePersonList = $this->getBreedCatList($breed2, 2);
+
+        // Check if there are cats available for the selected breeds
+        if ($malePersonList->isEmpty() || $femalePersonList->isEmpty()) {
+            return redirect()->route('cats.search')->with('error', __('app.no_cats_in_database'));
         }
-        if ($breed2) {
-            $femalePersonList = $this->getBreedCatList($breed2,2);
-        } else {
-            $femalePersonList = null;
+
+        // Try to find cats, handle missing cats
+        $cat = Cat::find($catId);
+        $cat2 = Cat::find($cat2Id);
+
+        // If cats are not properly selected or don't exist, default to first available
+        if (!$cat || $cat->id == 1 || !isset($cat->id)) {
+            $cat = Cat::where('gender_id', 1)->where('breed', $breed->breed())->first();
         }
+        if (!$cat2 || $cat2->id == 1 || !isset($cat2->id)) {
+            $cat2 = Cat::where('gender_id', 2)->where('breed', $breed2->breed())->first();
+        }
+
+        // Final check - ensure we have valid cats
+        if (!$cat || !$cat2) {
+            return redirect()->route('cats.search')->with('error', __('app.no_cats_in_database'));
+        }
+
         return view('cats.test', compact('breed', 'breed2', 'cat', 'cat2', 'generations', 'breedList', 'malePersonList', 'femalePersonList'));
     }
 
@@ -263,7 +316,7 @@ class CatsController extends Controller
 
             $this->updateCatMetadata($cat, $catAttributes);
 
-            return redirect()->route('cats.show', $cat->id);
+            return redirect()->route('cats.show', $cat->id)->with('success', __('app.cat_updated_success'));
         } else {
             return redirect('/');
         }    
@@ -316,10 +369,9 @@ class CatsController extends Controller
     {
         // Cat::where('gender_id', $genderId)->pluck('full_name', 'id');
         if ($genderId == 2) {
-
-        return Cat::select(DB::raw("CONCAT('(', breed, ') ', titles_before_name,' ',full_name,' ',titles_after_name) AS display_name"),'id')->where('gender_id', $genderId)->where('breed', $breed->breed())->pluck('display_name','id')->skip(1);
+            return Cat::select(DB::raw("CONCAT('(', breed, ') ', titles_before_name,' ',full_name,' ',titles_after_name) AS display_name"),'id')->where('gender_id', $genderId)->where('breed', $breed->breed())->pluck('display_name','id')->skip(1);
         } else {
-        return Cat::select(DB::raw("CONCAT('(', breed, ') ', titles_before_name,' ',full_name,' ',titles_after_name) AS display_name"),'id')->where('gender_id', $genderId)->where('breed', $breed->breed())->pluck('display_name','id');
+            return Cat::select(DB::raw("CONCAT('(', breed, ') ', titles_before_name,' ',full_name,' ',titles_after_name) AS display_name"),'id')->where('gender_id', $genderId)->where('breed', $breed->breed())->pluck('display_name','id');
         }
     }
 
@@ -364,13 +416,16 @@ class CatsController extends Controller
     {
         $catsMariageList = [];
 
-        foreach ($cat->couples as $spouse) {
-            $catsMariageList[$spouse->pivot->id] = $cat->full_name.' & '.$spouse->full_name;
+        if ($cat->couples) {
+            foreach ($cat->couples as $spouse) {
+                if ($spouse && $spouse->pivot && $spouse->full_name) {
+                    $catsMariageList[$spouse->pivot->id] = $cat->full_name.' & '.$spouse->full_name;
+                }
+            }
         }
 
         return $catsMariageList;
     }
-
     /**
      * Get all marriage list.
      *
@@ -381,7 +436,9 @@ class CatsController extends Controller
         $allMariageList = [];
 
         foreach (Couple::with('husband', 'wife')->get() as $couple) {
-            $allMariageList[$couple->id] = $couple->husband->full_name.' & '.$couple->wife->full_name;
+            if ($couple->husband && $couple->wife && $couple->husband->full_name && $couple->wife->full_name) {
+                $allMariageList[$couple->id] = $couple->husband->full_name.' & '.$couple->wife->full_name;
+            }
         }
 
         return $allMariageList;

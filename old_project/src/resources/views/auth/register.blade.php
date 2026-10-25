@@ -12,6 +12,13 @@
         <!-- Validation Errors -->
         <x-auth-validation-errors class="mb-4" :errors="$errors" />
 
+        <!-- First User Admin Notice -->
+        @if(isset($isFirstUser) && $isFirstUser)
+        <div class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <strong>{{ __('app.first_user_admin_notice') }}</strong>
+        </div>
+        @endif
+
         <form method="POST" action="{{ route('register') }}">
             @csrf
 

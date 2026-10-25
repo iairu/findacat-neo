@@ -64,6 +64,20 @@ return [
     'same_breed' => 'Zobraziť len rovnaké plemeno pre opačné pohlavie v možnostiach výberu',
     'display_reg_num' => 'Zobraziť registračné čísla',
     'delete_confirm_button' => 'Potvrdiť vymazanie',
-    'download_vet_confirmation' => 'Stiahnuť potvrdenie od veterinára',
-    'download_genetic_tests_file' => 'Stiahnuť súbor genetických testov'
+    'download_vet_confirmation' => 'Stiahnuť Veterinárne potvrdenie',
+    'download_genetic_tests_file' => 'Stiahnuť súbor genetických testov',
+    
+    // Duplicate cat confirmation
+    'duplicate_warning_title' => 'Varovanie o duplikátnej mačke',
+    'similar_cat_exists' => 'Existuje podobná mačka!',
+    'duplicate_warning_message' => 'Mačka s rovnakým celým menom už existuje v databáze. Prosím, skontrolujte porovnanie nižšie, aby ste sa uistili, že chcete zaregistrovať túto mačku.',
+    'comparison' => 'Porovnanie',
+    'field' => 'Pole',
+    'existing_cat' => 'Existujúca mačka',
+    'new_cat' => 'O registrácii',
+    'confirm_registration_question' => 'Ste si istí, že chcete pokračovať v registrácii?',
+    'yes_continue_registration' => 'Áno, pokračovať v registrácii',
+    'no_cancel' => 'Nie, zrušiť',
+    'tip' => 'Tip',
+    'duplicate_tip_message' => 'Môžete si prezrieť profil existujúcej mačky a overiť, či ide skutočne o inú mačku, pred pokračovaním v registrácii.',
 ];

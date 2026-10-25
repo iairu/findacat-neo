@@ -37,7 +37,7 @@ class FamilyActionsController extends Controller
                 $cat->setSire($sire);
             }
 
-            return back();
+            return back()->with('success', __('app.sire_set_success'));
         } else {
             return redirect('/');
         }
@@ -70,7 +70,7 @@ class FamilyActionsController extends Controller
                 $cat->setDam($dam);
             }
 
-            return back();
+            return back()->with('success', __('app.dam_set_success'));
         } else {
             return redirect('/');
         }
@@ -116,7 +116,7 @@ class FamilyActionsController extends Controller
 
             \DB::commit();
 
-            return back();
+            return back()->with('success', __('app.child_added_success'));
         } else {
             return redirect('/');
         }

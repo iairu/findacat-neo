@@ -74,6 +74,26 @@ class RegisterCatController extends Controller
     protected function create(Request $request)
     {
         if (Auth::user() && Auth::user()->is_admin) {
+            // Check for duplicate cat with same full name
+            $fullName = $request->get('full_name');
+            $existingCat = Cat::where('full_name', $fullName)->first();
+            
+            // If duplicate exists and user hasn't confirmed, show confirmation page
+            if ($existingCat && !$request->has('confirm_duplicate')) {
+                $newCat = (object) [
+                    'titles_before_name' => $request->get('titles_before_name'),
+                    'full_name' => $request->get('full_name'),
+                    'titles_after_name' => $request->get('titles_after_name'),
+                    'gender_id' => $request->get('gender_id'),
+                    'breed' => $request->get('breed'),
+                ];
+                
+                return view('cats.confirm-duplicate', [
+                    'existingCat' => $existingCat,
+                    'newCat' => $newCat,
+                    'formData' => $request->all(),
+                ]);
+            }
             $cat = Cat::create([
                 'id' => Uuid::uuid4()->toString(),
                 'titles_before_name' => $request->get('titles_before_name'),
@@ -105,7 +125,7 @@ class RegisterCatController extends Controller
             ]);
             $cat->save();
 
-            return view('cats.register-cat');
+            return redirect()->route('register-cat')->with('success', __('app.cat_registered_success'));
         } else {
             return redirect('/');
         }

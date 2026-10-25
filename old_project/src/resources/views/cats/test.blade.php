@@ -237,7 +237,7 @@
                                 @if ($cat && $generations >= 1)
                                 @php $json .= "\"s\": {" @endphp
                                 <tr class="s">
-                                    <td> Sire:<br><input class="ind" id="s" type="text" data="{{$cat->id()}}" disabled><br>{{$cat->l($generations)}}<br>{{ $cat->breed }} {{ $cat->ems_color }} {{ $cat->dob() }}
+                                    <td> Sire:<br><input class="ind" id="s" type="text" data="{{$cat->id()}}" disabled><br>{{$cat->l($generations)}}<br>{{ $cat->breed ?? '' }} {{ $cat->ems_color ?? '' }} {{ $cat->dob() }}
                                         <div class="reg_num">
     @if ($cat->id != "1")
     {{ $cat->original_reg_num }}<br> 
@@ -263,7 +263,7 @@
                                                 @php $json .= "\"s\": {" @endphp
                                                 <tr class="s">
 
-                                                    <td> <input class="ind" id="ss" type="text" data="{{$cat->s()->id()}}" disabled><br>{{$cat->s()->l($generations)}}<br>{{ $cat->s()->breed }} {{ $cat->s()->ems_color }} {{ $cat->s()->dob() }}
+                                                    <td> Dam:<br><input class="ind" id="d" type="text" data="{{$cat2->id()}}" disabled><br>{{$cat2->l($generations)}}<br>{{ $cat2->breed ?? '' }} {{ $cat2->ems_color ?? '' }} {{ $cat2->dob() }}
                                         <div class="reg_num">
     @if ($cat->s()->id != "1")
     {{ $cat->s()->original_reg_num }}<br> 
@@ -289,7 +289,7 @@
                                                                 @php $json .= "\"s\": {" @endphp
                                                                 <tr class="s">
 
-                                                                    <td> <input class="ind" id="sss" type="text" data="{{$cat->s()->s()->id()}}" disabled><br>{{$cat->s()->s()->l($generations)}}<br>{{ $cat->s()->s()->breed }} {{ $cat->s()->s()->ems_color }} {{ $cat->s()->s()->dob() }}
+                                                                    <td><input class="ind" id="sss" type="text" data="{{$cat->sire->sire->id()}}" disabled><br>{{$cat->sire->sire->l($generations)}}<br>{{ $cat->sire->sire->breed ?? '' }} {{ $cat->sire->sire->ems_color ?? '' }} {{ $cat->sire->sire->dob() }}
                                         <div class="reg_num">
     @if ($cat->s()->s()->id != "1")
     {{ $cat->s()->s()->original_reg_num }}<br> 
@@ -466,7 +466,7 @@
                                                                 @php $json .= "\"d\": {" @endphp
                                                                 <tr class="d">
 
-                                                                    <td> <input class="ind" id="ssd" type="text" data="{{$cat->s()->d()->id()}}" disabled><br>{{$cat->s()->d()->l($generations)}}<br>{{ $cat->s()->d()->breed }} {{ $cat->s()->d()->ems_color }} {{ $cat->s()->d()->dob() }}
+                                                                    <td><input class="ind" id="sdd" type="text" data="{{$cat->dam->dam->id()}}" disabled><br>{{$cat->dam->dam->l($generations)}}<br>{{ $cat->dam->dam->breed ?? '' }} {{ $cat->dam->dam->ems_color ?? '' }} {{ $cat->dam->dam->dob() }}
                                         <div class="reg_num">
     @if ($cat->s()->d()->id != "1")
     {{ $cat->s()->d()->original_reg_num }}<br> 
@@ -655,7 +655,7 @@
                                                 @php $json .= "\"d\": {" @endphp
                                                 <tr class="d">
 
-                                                    <td> <input class="ind" id="sd" type="text" data="{{$cat->d()->id()}}" disabled><br>{{$cat->d()->l($generations)}}<br>{{ $cat->d()->breed }} {{ $cat->d()->ems_color }} {{ $cat->d()->dob() }}
+                                                    <td><input class="ind" id="ddd" type="text" data="{{$cat2->dam->dam->id()}}" disabled><br>{{$cat2->dam->dam->l($generations)}}<br>{{ $cat2->dam->dam->breed ?? '' }} {{ $cat2->dam->dam->ems_color ?? '' }} {{ $cat2->dam->dam->dob() }}
                                         <div class="reg_num">
     @if ($cat->d()->id != "1")
     {{ $cat->d()->original_reg_num }}<br> 
@@ -682,7 +682,7 @@
                                                                 @php $json .= "\"s\": {" @endphp
                                                                 <tr class="s">
 
-                                                                    <td> <input class="ind" id="sds" type="text" data="{{$cat->d()->s()->id()}}" disabled><br>{{$cat->d()->s()->l($generations)}}<br>{{ $cat->d()->s()->breed }} {{ $cat->d()->s()->ems_color }} {{ $cat->d()->s()->dob() }}
+                                                                    <td><input class="ind" id="dds" type="text" data="{{$cat2->dam->sire->id()}}" disabled><br>{{$cat2->dam->sire->l($generations)}}<br>{{ $cat2->dam->sire->breed ?? '' }} {{ $cat2->dam->sire->ems_color ?? '' }} {{ $cat2->dam->sire->dob() }}
                                         <div class="reg_num">
     @if ($cat->d()->s()->id != "1")
     {{ $cat->d()->s()->original_reg_num }}<br> 
