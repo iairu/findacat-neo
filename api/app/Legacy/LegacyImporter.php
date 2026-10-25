@@ -5,6 +5,7 @@ namespace App\Legacy;
 use App\Models\Breed;
 use App\Models\Cat;
 use App\Models\EmsColor;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 final class LegacyImporter
 {
     /** Legacy cats column => new cats column. Columns not listed here are handled in code. */
-    private const CAT_COLUMNS = [
+    public const CAT_COLUMNS = [
         'full_name' => 'name',
         'titles_before_name' => 'title_prefix',
         'titles_after_name' => 'title_suffix',
@@ -129,6 +130,10 @@ final class LegacyImporter
             }
         }
 
+        // Exports from this app carry the owner and moderation status; legacy exports do not, and must not reset them.
+        $hasOwnership = $rows !== [] && array_key_exists('owner_id', $rows[0]) && array_key_exists('moderation_status', $rows[0]);
+        $userIds = $hasOwnership ? array_flip(User::query()->pluck('id')->all()) : [];
+
         $records = [];
         $parents = [];
         foreach ($rows as $i => $row) {
@@ -158,6 +163,12 @@ final class LegacyImporter
             $record['died_on'] = $this->date($row['dod'] ?? null, "{$name} date of death", $report);
             $doo = self::text($row['doo'] ?? null);
             $record['metadata'] = $doo === null ? null : json_encode(['doo' => $doo]);
+            if ($hasOwnership) {
+                $owner = self::text($row['owner_id'] ?? null);
+                $status = self::text($row['moderation_status'] ?? null);
+                $record['owner_id'] = $owner !== null && isset($userIds[$owner]) ? $owner : null;
+                $record['moderation_status'] = in_array($status, ['pending', 'approved', 'rejected'], true) ? $status : 'approved';
+            }
             $record['created_at'] = $now;
             $record['updated_at'] = $now;
 

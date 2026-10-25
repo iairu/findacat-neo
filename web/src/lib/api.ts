@@ -46,3 +46,18 @@ export const query = (params: Record<string, string | number | boolean | undefin
   const s = q.toString();
   return s ? '?' + s : '';
 };
+
+/** Multipart upload (CSV import). The browser sets the boundary, so no Content-Type here. */
+export async function upload<T = any>(path: string, form: FormData): Promise<T> {
+  if (!csrfReady) {
+    await fetch('/api/sanctum/csrf-cookie', { credentials: 'same-origin' });
+    csrfReady = true;
+  }
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+  const token = cookie('XSRF-TOKEN');
+  if (token) headers['X-XSRF-TOKEN'] = token;
+  const res = await fetch('/api' + path, { method: 'POST', headers, credentials: 'same-origin', body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, data.message ?? res.statusText, data.errors ?? {});
+  return data as T;
+}

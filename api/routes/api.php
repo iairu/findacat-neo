@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminBackupController;
+use App\Http\Controllers\Api\AdminBreedController;
 use App\Http\Controllers\Api\AdminCatController;
+use App\Http\Controllers\Api\AdminEmsController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\CatController;
 use App\Http\Controllers\Api\LookupController;
 use Illuminate\Http\Request;
@@ -47,4 +51,18 @@ Route::middleware(['auth:sanctum', 'verified', 'can:admin'])->prefix('admin')->g
     Route::get('/cats', [AdminCatController::class, 'index']);
     Route::post('/cats/{cat}/approve', [AdminCatController::class, 'approve']);
     Route::post('/cats/{cat}/reject', [AdminCatController::class, 'reject']);
+
+    Route::post('/breeds', [AdminBreedController::class, 'store']);
+    Route::put('/breeds/{breed}', [AdminBreedController::class, 'update']);
+    Route::delete('/breeds/{breed}', [AdminBreedController::class, 'destroy']);
+    Route::post('/ems', [AdminEmsController::class, 'store']);
+    Route::put('/ems/{ems}', [AdminEmsController::class, 'update']);
+    Route::delete('/ems/{ems}', [AdminEmsController::class, 'destroy']);
+
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::patch('/users/{user}', [AdminUserController::class, 'update']);
+
+    Route::get('/backup/{table}', [AdminBackupController::class, 'export']);
+    Route::post('/backup/{table}', [AdminBackupController::class, 'import']);
+    Route::delete('/backup/{table}', [AdminBackupController::class, 'clear']);
 });

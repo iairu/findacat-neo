@@ -1,4 +1,4 @@
-import { api, ApiError, query } from './api';
+import { api, ApiError, query, upload } from './api';
 
 type Dict = Record<string, string>;
 type Json = any;
@@ -310,7 +310,7 @@ async function accountPage() {
     <form class="stack" id="profile" novalidate>${input('name', t('auth.name'), { value: user.name, required: true })}
       ${select('locale', t('auth.language'), [['en', 'English'], ['sk', 'Slovenčina']], user.locale)}
       <p class="form-error" role="alert"></p><div class="row"><button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button><span id="saved"></span></div></form>
-    <p><button class="btn btn--ghost" id="logout" type="button">${esc(t('auth.logout'))}</button></p>
+    <p class="row">${user.is_admin ? `<a class="btn btn--ghost" href="${href('/admin/')}">${esc(t('nav.admin'))}</a>` : ''}<button class="btn btn--ghost" id="logout" type="button">${esc(t('auth.logout'))}</button></p>
     <section id="mine"></section>`;
   app.querySelector('#resend')?.addEventListener('click', async () => {
     try { await api('POST', '/email/resend'); app.querySelector('#resend-out')!.textContent = ' ' + t('auth.verifySent'); } catch (e) { app.querySelector('#resend-out')!.textContent = ' ' + messageOf(e); }
@@ -378,9 +378,130 @@ async function catEditPage() {
   });
 }
 
+// ---------------------------------------------------------------- admin
+
+const TABLES = ['cats', 'breeds', 'ems'] as const;
+
+async function adminPage() {
+  const user = await me();
+  if (!user) { app.innerHTML = loginPrompt(); return; }
+  if (!user.is_admin) { app.innerHTML = note('error', t('admin.forbidden')); return; }
+
+  const tabs: Record<string, () => Promise<void>> = { queue: queueTab, breeds: breedsTab, ems: emsTab, users: usersTab, backup: backupTab };
+  app.innerHTML = `<div class="tabs" role="tablist">${Object.keys(tabs).map((k) => `<button class="btn btn--ghost" role="tab" data-tab="${k}">${esc(t('admin.tab.' + k))}</button>`).join('')}</div><div id="panel"></div>`;
+  const panel = app.querySelector<HTMLElement>('#panel')!;
+  const open = async (key: string) => {
+    app.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === key)));
+    panel.innerHTML = '';
+    try { await tabs[key](); } catch (e) { panel.innerHTML = note('error', messageOf(e)); }
+  };
+  app.querySelector('.tabs')!.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLElement>('[data-tab]');
+    if (b) { history.replaceState(null, '', '#' + b.dataset.tab); open(b.dataset.tab!); }
+  });
+  open(tabs[location.hash.slice(1)] ? location.hash.slice(1) : 'queue');
+
+  async function queueTab() {
+    const { data } = await api('GET', '/admin/cats?status=pending');
+    panel.innerHTML = data.length
+      ? `<ul class="cat-list cat-list--wide">${data.map((c: Json) => `<li data-id="${esc(c.id)}"><a href="${catUrl(c.id)}"><strong>${esc(catName(c))}</strong><span>${esc([c.ems_code, c.owner ? t('admin.addedBy', { name: c.owner.name }) : ''].filter(Boolean).join(' · '))}</span></a>
+          <div class="row"><button class="btn btn--primary" data-act="approve">${esc(t('admin.approve'))}</button><button class="btn btn--ghost" data-act="reject">${esc(t('admin.reject'))}</button></div></li>`).join('')}</ul>`
+      : `<p class="empty">${esc(t('admin.queueEmpty'))}</p>`;
+    panel.onclick = async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
+      if (!b) return;
+      const li = b.closest<HTMLElement>('li')!;
+      b.disabled = true;
+      try {
+        await api('POST', `/admin/cats/${encodeURIComponent(li.dataset.id!)}/${b.dataset.act}`);
+        li.remove();
+        if (!panel.querySelector('li')) panel.innerHTML = `<p class="empty">${esc(t('admin.queueEmpty'))}</p>`;
+      } catch (e) { b.disabled = false; panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e))); }
+    };
+  }
+
+  /** Shared list-with-add-form editor for breeds and EMS colours. */
+  async function crudTab(resource: 'breeds' | 'ems', fields: { name: string; label: string; required?: boolean; options?: [string, string][] }[], label: (r: Json) => string) {
+    const { data } = await api('GET', '/' + resource);
+    panel.innerHTML = `<form class="stack row-form" novalidate>${fields.map((f) => (f.options ? select(f.name, f.label, f.options) : input(f.name, f.label, { required: f.required }))).join('')}
+        <p class="form-error" role="alert"></p><div><button class="btn btn--primary" type="submit">${esc(t('admin.add'))}</button></div></form>
+      <ul class="cat-list cat-list--wide">${data.map((r: Json) => `<li data-id="${esc(r.id)}"><span><strong>${esc(label(r))}</strong></span><button class="btn btn--ghost" data-del>${esc(t('common.delete'))}</button></li>`).join('')}</ul>`;
+    onSubmit(panel.querySelector('form')!, async (d) => {
+      await api('POST', '/admin/' + resource, Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v === '' ? null : v])));
+      await open(resource);
+    });
+    panel.onclick = async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLElement>('[data-del]');
+      if (!b || !confirm(t('admin.confirmDelete'))) return;
+      try { await api('DELETE', `/admin/${resource}/${encodeURIComponent(b.closest<HTMLElement>('li')!.dataset.id!)}`); await open(resource); }
+      catch (e) { panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e))); }
+    };
+  }
+
+  const breedsTab = () => crudTab('breeds', [{ name: 'code', label: t('admin.code'), required: true }, { name: 'name', label: t('admin.name') }], (r) => [r.code, r.name].filter(Boolean).join(' · '));
+
+  async function emsTab() {
+    const breeds = (await api('GET', '/breeds')).data as Json[];
+    const names = Object.fromEntries(breeds.map((b) => [b.id, b.code]));
+    await crudTab('ems', [
+      { name: 'code', label: t('admin.code'), required: true }, { name: 'english_name', label: t('admin.englishName') },
+      { name: 'breed_id', label: t('admin.breed'), options: [['', t('admin.noBreed')], ...breeds.map((b): [string, string] => [b.id, b.code])] },
+    ], (r) => [names[r.breed_id], r.code, r.english_name].filter(Boolean).join(' · '));
+  }
+
+  async function usersTab() {
+    panel.innerHTML = `<div class="field"><label for="user-q">${esc(t('admin.searchUsers'))}</label><input id="user-q" type="search"></div><ul class="cat-list cat-list--wide" id="users"></ul>`;
+    const list = panel.querySelector<HTMLElement>('#users')!;
+    const load = async (q: string) => {
+      const { data } = await api('GET', '/admin/users' + query({ q }));
+      list.innerHTML = data.map((u: Json) => `<li data-id="${esc(u.id)}"><span><strong>${esc(u.name)}</strong> <small>${esc(u.email)}</small></span>
+        <label class="check"><input type="checkbox" ${u.is_admin ? 'checked' : ''}${u.id === user.id ? ' disabled' : ''}> ${esc(t('admin.isAdmin'))}</label></li>`).join('');
+    };
+    let timer: number;
+    panel.querySelector('#user-q')!.addEventListener('input', (ev) => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => load((ev.target as HTMLInputElement).value.trim()).catch(() => {}), 250);
+    });
+    list.addEventListener('change', async (ev) => {
+      const box = ev.target as HTMLInputElement;
+      try { await api('PATCH', `/admin/users/${encodeURIComponent(box.closest<HTMLElement>('li')!.dataset.id!)}`, { is_admin: box.checked }); }
+      catch (e) { box.checked = !box.checked; panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e))); }
+    });
+    await load('');
+  }
+
+  async function backupTab() {
+    panel.innerHTML = `<p class="lead">${esc(t('admin.backupLead'))}</p>`
+      + TABLES.map((tb) => `<section class="backup" data-table="${tb}"><h2>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h2>
+        <p><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a></p>
+        <form class="stack" data-import novalidate><div class="field"><label for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
+          <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></section>`).join('')
+      + `<section class="danger"><h2>${esc(t('admin.danger'))}</h2><p>${esc(t('admin.clearLead'))}</p>
+        ${TABLES.map((tb) => `<form class="row" data-clear="${tb}" novalidate><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</section>`;
+
+    panel.querySelectorAll<HTMLFormElement>('form[data-import]').forEach((form) => {
+      const tb = form.closest<HTMLElement>('[data-table]')!.dataset.table!;
+      onSubmit(form, async () => {
+        const body = new FormData(form);
+        const { data } = await upload(`/admin/backup/${tb}`, body);
+        const summary = Object.entries(data.counts).map(([k, v]) => `${k} ${v}`).join(', ');
+        form.querySelector('.import-out')!.innerHTML = note('ok', t('admin.imported', { summary }))
+          + (data.warnings.length ? `<details><summary>${esc(t('admin.warnings'))} (${data.warnings.length})</summary><ul>${data.warnings.map((w: string) => `<li>${esc(w)}</li>`).join('')}</ul></details>` : '');
+      });
+    });
+    panel.querySelectorAll<HTMLFormElement>('form[data-clear]').forEach((form) => {
+      onSubmit(form, async (d) => {
+        await api('DELETE', `/admin/backup/${form.dataset.clear}`, { confirm: d.confirm });
+        form.reset();
+        form.querySelector('.form-error')!.textContent = t('admin.cleared');
+      });
+    });
+  }
+}
+
 const pages: Record<string, () => void | Promise<void>> = {
   cats: catsPage, cat: catPage, 'test-mating': matingPage, birthdays: birthdaysPage,
   login: loginPage, register: registerPage, 'forgot-password': forgotPage, 'reset-password': resetPage,
-  account: accountPage, 'cat-edit': catEditPage,
+  account: accountPage, 'cat-edit': catEditPage, admin: adminPage,
 };
 pages[page]?.();
