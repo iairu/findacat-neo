@@ -3,11 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use RuntimeException;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
@@ -33,6 +37,28 @@ class AuthApiTest extends TestCase
         $user = User::firstWhere('email', 'ann@example.com');
         Notification::assertSentTo($user, VerifyEmail::class);
         $this->getJson('/api/user')->assertOk()->assertJsonPath('data.email', 'ann@example.com');
+    }
+
+    public function test_register_still_succeeds_when_the_confirmation_email_fails(): void
+    {
+        Exceptions::fake();
+        Event::listen(Registered::class, fn () => throw new RuntimeException('SMTP down'));
+
+        $this->postJson('/api/register', $this->new)->assertCreated();
+
+        Exceptions::assertReported(RuntimeException::class);
+        $this->getJson('/api/user')->assertOk()->assertJsonPath('data.email', 'ann@example.com');
+    }
+
+    public function test_signups_can_be_disabled(): void
+    {
+        $this->getJson('/api/settings')->assertOk()->assertJsonPath('signups', true);
+
+        config(['app.signups_disabled' => true]);
+
+        $this->getJson('/api/settings')->assertOk()->assertJsonPath('signups', false);
+        $this->postJson('/api/register', $this->new)->assertForbidden()->assertJsonPath('message', 'Sign-ups are closed.');
+        $this->assertSame(0, User::count());
     }
 
     public function test_register_rejects_weak_passwords_and_duplicates(): void

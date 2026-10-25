@@ -35,7 +35,7 @@ Make `findacat-app/storage` and `findacat-app/bootstrap/cache` writable (permiss
 
 ## Configure
 
-In `findacat-app/` rename `env-template.txt` to `.env` (the leading dot is part of the name) and fill in the `DB_*` and `MAIL_*` values. `APP_KEY` and `INSTALL_TOKEN` are already generated for this release. The default settings use file-based sessions and cache and send mail immediately, so no cron job or queue worker is needed.
+In `findacat-app/` rename `env-template.txt` to `.env` (the leading dot is part of the name) and fill in the `DB_*` and `MAIL_*` values. `APP_KEY` and `INSTALL_TOKEN` are already generated for this release. The default settings use file-based sessions and cache and send mail immediately, so no cron job or queue worker is needed. To close registration, set `DISABLE_SIGNUPS=true`; the sign-up page then shows a notice and existing accounts keep working.
 
 ## Run the setup page
 

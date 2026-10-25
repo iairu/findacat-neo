@@ -17,11 +17,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        abort_if(config('app.signups_disabled'), 403, 'Sign-ups are closed.');
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
@@ -30,7 +33,12 @@ class AuthController extends Controller
         ]);
 
         $user = User::create($data);
-        event(new Registered($user));
+        try {
+            event(new Registered($user));
+        } catch (Throwable $e) {
+            // The account exists either way; a failed confirmation email can be resent from the account page.
+            report($e);
+        }
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 

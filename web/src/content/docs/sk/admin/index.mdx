@@ -35,7 +35,7 @@ Priečinky `findacat-app/storage` a `findacat-app/bootstrap/cache` musia byť za
 
 ## Nastavenie
 
-V `findacat-app/` premenujte `env-template.txt` na `.env` (bodka na začiatku je súčasťou názvu) a doplňte hodnoty `DB_*` a `MAIL_*`. `APP_KEY` a `INSTALL_TOKEN` sú pre toto vydanie už vygenerované. Predvolené nastavenie používa relácie a cache v súboroch a odosiela e-maily okamžite, takže nie je potrebný cron ani spracovateľ fronty.
+V `findacat-app/` premenujte `env-template.txt` na `.env` (bodka na začiatku je súčasťou názvu) a doplňte hodnoty `DB_*` a `MAIL_*`. `APP_KEY` a `INSTALL_TOKEN` sú pre toto vydanie už vygenerované. Predvolené nastavenie používa relácie a cache v súboroch a odosiela e-maily okamžite, takže nie je potrebný cron ani spracovateľ fronty. Registráciu vypnete nastavením `DISABLE_SIGNUPS=true`; stránka registrácie potom zobrazí oznam a existujúce účty fungujú ďalej.
 
 ## Inštalačná stránka
 

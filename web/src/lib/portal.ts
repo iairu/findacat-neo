@@ -266,7 +266,13 @@ function loginPage() {
   });
 }
 
-function registerPage() {
+async function registerPage() {
+  const settings = await api('GET', '/settings').catch(() => ({ signups: true }));
+  if (!settings.signups) {
+    app.innerHTML = note('info', t('auth.signupsClosed'))
+      + `<p class="aside">${esc(t('auth.haveAccount'))} <a href="${href('/login/')}">${esc(t('auth.login'))}</a></p>`;
+    return;
+  }
   app.innerHTML = `<p class="lead">${esc(t('auth.registerLead'))}</p>` + authForm(
     input('name', t('auth.name'), { required: true, autocomplete: 'name' }) + input('email', t('auth.email'), { type: 'email', required: true, autocomplete: 'email' })
     + input('password', t('auth.password'), { type: 'password', required: true, hint: t('auth.passwordHint'), autocomplete: 'new-password' })

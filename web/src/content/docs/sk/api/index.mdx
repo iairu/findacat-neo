@@ -17,6 +17,7 @@ Chyby používajú štandardné stavové kódy. Neplatný vstup vracia `422` s `
 | Metóda a cesta | Účel |
 | --- | --- |
 | `GET /health` | Kontrola dostupnosti |
+| `GET /settings` | Verejné nastavenia stránky: `{ "signups": true }` |
 | `GET /cats` | Hľadanie. Parametre: `q`, `exact`, `sex` (`male`/`female`), `breed_code`, `ems_code`, `born`, `reg_number`, `per_page` (max 100). Stránkované |
 | `GET /cats/{id}` | Jedna mačka s `inbreeding`, `sire`, `dam`, `children` a `can_edit` |
 | `GET /cats/{id}/pedigree` | Strom predkov. Parameter: `generations` (1–6) |

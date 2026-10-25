@@ -116,6 +116,8 @@ MAIL_FROM_NAME="Find A Cat"
 # Setup page: $SITE_URL/api/install?token=...
 # Delete this line after the first run.
 INSTALL_TOKEN=$TOKEN
+# true or 1 closes registration; existing accounts keep working.
+DISABLE_SIGNUPS=false
 ENV
 
 echo "==> Zipping"

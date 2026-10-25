@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\CompactStackTraces;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -111,6 +112,7 @@ return [
             ],
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
+            'tap' => [CompactStackTraces::class],
         ],
 
         'syslog' => [

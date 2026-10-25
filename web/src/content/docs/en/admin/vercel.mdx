@@ -32,6 +32,7 @@ To use another database, set `DB_URL` yourself, for example `mysql://user:passwo
 | `INSTALL_TOKEN` | A long random string, for example from `openssl rand -hex 24`. Only needed while running the setup page. |
 | `APP_NAME` | `Find A Cat`, or the name to show in emails. |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your SMTP account, with `MAIL_MAILER=smtp`. Without them emails are only written to the function log. |
+| `DISABLE_SIGNUPS` | `true` or `1` closes registration: the sign-up page shows a notice instead of the form. Existing accounts keep working. |
 | `APP_URL` | Only for a custom domain: `https://your-domain.example`. |
 | `DB_URL` | Only when the database was not added through the Marketplace. |
 

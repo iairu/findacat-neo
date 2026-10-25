@@ -17,6 +17,10 @@ Route::get('/health', fn () => [
     'app' => config('app.name'),
 ]);
 
+Route::get('/settings', fn () => [
+    'signups' => ! config('app.signups_disabled'),
+]);
+
 // Runs before the sessions and cache tables exist, so it skips the session middleware and throttles itself.
 Route::withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->group(function () {
     Route::get('/install', [InstallController::class, 'form']);

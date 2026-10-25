@@ -60,6 +60,9 @@ return [
     /** Enables the one-time `/api/install` setup route; leave empty once installed. */
     'install_token' => env('INSTALL_TOKEN'),
 
+    // DISABLE_SIGNUPS=1/true closes registration; existing accounts keep working.
+    'signups_disabled' => filter_var(env('DISABLE_SIGNUPS', false), FILTER_VALIDATE_BOOL),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
