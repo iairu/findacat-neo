@@ -36,7 +36,7 @@ findacat-neo/
 
 1. **Base setup:** rename the Astro app and strip PressHaven content; amber/cream theme (light + dark); EN/SK routing; bare Laravel API with Sanctum.
 2. **Data:** migrations keeping old UUIDs and fields, plus `owner_id` and moderation fields; importer for the old findacat.eu database; breeds/EMS.
-3. **Inbreeding:** PHP Wright COI service ported from `inbreeding.js`; tests compare against old outputs on the demo data.
+3. **Inbreeding:** PHP Wright COI service written from the published method (not translated from `inbreeding.js`, which is GPL-3.0); tests compare against old outputs on the demo data.
 4. **API:** accounts (sign up, verification, password reset), cats, parents, search, pedigree, test mating, birthdays, PawPeds.
 5. **Portal UI:** search, cat profile, pedigree tree and chart, test mating with COI, "My cats", cat registration.
 6. **Admin:** moderation queue, backups, CSV import/export, breed/EMS management.
@@ -46,3 +46,10 @@ findacat-neo/
 
 - PawPeds: confirm whether the old integration scrapes pages (fragile) before porting it.
 - License: old code derives from Silsilah (MIT); keep the notice wherever its logic is carried over.
+- License (GPL): `old_project/src/public/js/inbreeding.js` is Sam Kauffman's Inbreeding Calculator, GPL-3.0. Translating it to PHP would make the port GPL. Write the COI service from Wright's formula and use the old script only as a black-box oracle for test expectations, or decide deliberately to license the project GPL.
+- Hosting: Laravel 13 needs PHP 8.3+. Confirm the target host offers it before phase 4.
+
+## Status
+
+- Phase 1 done: `web/` (Astro, amber theme, EN/SK, docs with search) and `api/` (Laravel 13, Sanctum cookie auth, `/api/health`).
+- Local PHP is not installed; run Composer and Artisan through the `composer:2` Docker image (see `api/README.md`).
