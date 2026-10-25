@@ -1,0 +1,16 @@
+{
+  "name": "findacat",
+  "private": true,
+  "description": "Repository root. The site lives in web/ and the API in api/; vercel.json builds both. Listing astro here lets Vercel's import detect the project at the root instead of offering web/ alone; install dependencies in web/.",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "preview": "npm --prefix web run preview"
+  },
+  "devDependencies": {
+    "astro": "^7.4.2"
+  }
+}

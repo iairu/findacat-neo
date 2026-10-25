@@ -8,19 +8,20 @@ The repository deploys to [Vercel](https://vercel.com) as it is. Vercel builds t
 
 ## Deploy with one click
 
-Use [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (the same button is in the repository's `README.md`). It:
+Use [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&env=APP_NAME%2CDISABLE_SIGNUPS%2CMAIL_MAILER&envDefaults=%7B%22APP_NAME%22%3A%22Find%20A%20Cat%22%2C%22DISABLE_SIGNUPS%22%3A%22false%22%2C%22MAIL_MAILER%22%3A%22log%22%7D&envDescription=The%20defaults%20work%20as%20they%20are%3B%20APP_KEY%20and%20the%20setup%20token%20are%20generated%20by%20the%20build.%20For%20real%20email%20set%20MAIL_MAILER%20to%20smtp%20later%20and%20add%20MAIL_HOST%2C%20MAIL_PORT%2C%20MAIL_USERNAME%2C%20MAIL_PASSWORD%20and%20MAIL_FROM_ADDRESS.&envLink=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo%2Fblob%2Fmain%2Fweb%2Fsrc%2Fcontent%2Fdocs%2Fen%2Fadmin%2Fvercel.mdx%23environment-variables&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (the same button is in the repository's `README.md`). It:
 
 1. copies the repository to your GitHub, GitLab or Bitbucket account,
-2. creates a **Neon Postgres** database for the project (confirm the Neon terms and the free plan when asked),
-3. builds and deploys.
+2. asks for `APP_NAME`, `DISABLE_SIGNUPS` and `MAIL_MAILER`, already filled in with working defaults (`Find A Cat`, `false`, `log`),
+3. creates a **Neon Postgres** database for the project, preselected (confirm the Neon terms and the free plan when asked),
+4. builds and deploys.
 
-No environment variables are needed for the first deployment. The build runs the database migrations and generates the encryption key (`APP_KEY`) and a setup token itself. Continue with [Create the first administrator](#create-the-first-administrator).
+Nothing else is needed for the first deployment. The build runs the database migrations and generates the encryption key (`APP_KEY`) and a setup token itself. Emails go to the function log until you add SMTP settings. Continue with [Create the first administrator](#create-the-first-administrator).
 
 ## Import an existing repository
 
 If you import the repository through **Add New → Project** instead, Vercel cannot add the database for you:
 
-1. Leave the root directory at `./` and the framework preset at **Other**, and deploy.
+1. Vercel offers the repository root (`./`, detected as Astro through the root `package.json`) and `web`. Keep `./`: `vercel.json` sets the build for both the site and the API and overrides the preset. Optionally paste `.env.example` into **Environment Variables**, then deploy.
 2. In the project open **Storage → Create Database → Neon** and connect it to all environments. This adds `DATABASE_URL` / `POSTGRES_URL`, which the API picks up automatically.
 3. Open **Deployments**, and **Redeploy** the latest deployment so the build can reach the database.
 

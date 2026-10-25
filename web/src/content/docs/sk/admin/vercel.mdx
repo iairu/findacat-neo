@@ -8,19 +8,20 @@ Repozitár sa dá nasadiť na [Vercel](https://vercel.com) bez úprav. Vercel zo
 
 ## Nasadenie jedným kliknutím
 
-Použite [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (rovnaké tlačidlo je v súbore `README.md` repozitára). Tlačidlo:
+Použite [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&env=APP_NAME%2CDISABLE_SIGNUPS%2CMAIL_MAILER&envDefaults=%7B%22APP_NAME%22%3A%22Find%20A%20Cat%22%2C%22DISABLE_SIGNUPS%22%3A%22false%22%2C%22MAIL_MAILER%22%3A%22log%22%7D&envDescription=The%20defaults%20work%20as%20they%20are%3B%20APP_KEY%20and%20the%20setup%20token%20are%20generated%20by%20the%20build.%20For%20real%20email%20set%20MAIL_MAILER%20to%20smtp%20later%20and%20add%20MAIL_HOST%2C%20MAIL_PORT%2C%20MAIL_USERNAME%2C%20MAIL_PASSWORD%20and%20MAIL_FROM_ADDRESS.&envLink=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo%2Fblob%2Fmain%2Fweb%2Fsrc%2Fcontent%2Fdocs%2Fen%2Fadmin%2Fvercel.mdx%23environment-variables&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (rovnaké tlačidlo je v súbore `README.md` repozitára). Tlačidlo:
 
 1. skopíruje repozitár do vášho účtu na GitHube, GitLabe alebo Bitbuckete,
-2. vytvorí pre projekt databázu **Neon Postgres** (keď sa zobrazia, potvrďte podmienky Neonu a bezplatný plán),
-3. zostaví a nasadí projekt.
+2. vypýta si `APP_NAME`, `DISABLE_SIGNUPS` a `MAIL_MAILER`, už vyplnené funkčnými predvolenými hodnotami (`Find A Cat`, `false`, `log`),
+3. vytvorí pre projekt databázu **Neon Postgres**, ktorá je vopred zvolená (keď sa zobrazia, potvrďte podmienky Neonu a bezplatný plán),
+4. zostaví a nasadí projekt.
 
-Pri prvom nasadení netreba nastavovať žiadne premenné prostredia. Zostavenie samo spustí migrácie databázy a vygeneruje šifrovací kľúč (`APP_KEY`) aj inštalačný token. Pokračujte časťou [Vytvorenie prvého administrátora](#vytvorenie-prvého-administrátora).
+Nič ďalšie pri prvom nasadení netreba. Zostavenie samo spustí migrácie databázy a vygeneruje šifrovací kľúč (`APP_KEY`) aj inštalačný token. Kým nepridáte nastavenia SMTP, e-maily sa zapisujú do logu funkcie. Pokračujte časťou [Vytvorenie prvého administrátora](#vytvorenie-prvého-administrátora).
 
 ## Import existujúceho repozitára
 
 Ak repozitár importujete cez **Add New → Project**, databázu za vás Vercel nepridá:
 
-1. Koreňový priečinok nechajte `./`, predvoľbu frameworku **Other** a nasaďte.
+1. Vercel ponúkne koreň repozitára (`./`, rozpoznaný ako Astro vďaka koreňovému `package.json`) a `web`. Nechajte `./`: `vercel.json` nastavuje zostavenie webu aj API a predvoľbu prepíše. Voliteľne vložte `.env.example` do **Environment Variables** a nasaďte.
 2. V projekte otvorte **Storage → Create Database → Neon** a pripojte databázu ku všetkým prostrediam. Pribudnú premenné `DATABASE_URL` / `POSTGRES_URL` a API ich použije automaticky.
 3. Otvorte **Deployments** a posledné nasadenie spustite znova cez **Redeploy**, aby sa zostavenie dostalo k databáze.
 

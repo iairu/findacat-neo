@@ -34,7 +34,7 @@ vercel.json, composer.json   Vercel build: static site + api/index.php as a PHP 
 
 ## Deployment (Vercel)
 
-The Deploy button in `README.md` clones the repository and provisions Neon Postgres; a plain Git import works too, with Neon added under Storage. No dashboard settings or variables are required:
+The Deploy button in `README.md` clones the repository, prefills `APP_NAME`, `DISABLE_SIGNUPS` and `MAIL_MAILER`, and preselects Neon Postgres; the root `package.json` lists `astro` so the import flow detects the project at the root; a plain Git import works too, with Neon added under Storage. No dashboard settings or variables are required:
 
 - `vercel.json` builds `web/` to `web/dist` and runs `api/index.php` with the `vercel-php` runtime; `/api` and `/api/*` rewrite to it.
 - The runtime only looks for `composer.json` at the root, so the root `composer.json` has a `vercel` script that installs `api/` without dev packages.
