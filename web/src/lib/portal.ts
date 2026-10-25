@@ -438,7 +438,9 @@ async function adminPage() {
     };
   }
 
-  const breedsTab = () => crudTab('breeds', [{ name: 'code', label: t('admin.code'), required: true }, { name: 'name', label: t('admin.name') }], (r) => [r.code, r.name].filter(Boolean).join(' · '));
+  async function breedsTab() {
+    await crudTab('breeds', [{ name: 'code', label: t('admin.code'), required: true }, { name: 'name', label: t('admin.name') }], (r) => [r.code, r.name].filter(Boolean).join(' · '));
+  }
 
   async function emsTab() {
     const breeds = (await api('GET', '/breeds')).data as Json[];
