@@ -1,0 +1,75 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { docsFor, entryUrl, sectionOrder, type DocEntry } from '../lib/docs';
+import { localePath, t, type Locale } from '../i18n/ui';
+
+interface Props { locale: Locale; entry: DocEntry }
+const { locale, entry } = Astro.props;
+const tr = t(locale);
+
+const { Content, headings } = await render(entry);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+const all = await docsFor(locale);
+const current = entryUrl(entry);
+const groups = sectionOrder
+  .map((section) => ({ section, items: all.filter((e) => e.data.section === section) }))
+  .filter((g) => g.items.length);
+const index = all.findIndex((e) => e.id === entry.id);
+const prev = all[index - 1];
+const next = all[index + 1];
+---
+<BaseLayout title={entry.data.title} description={entry.data.description}>
+  <div class="container docs">
+    <nav class="docs-nav" aria-label={tr('docs.sections')}>
+      {groups.map((g) => (
+        <div class="docs-nav__group">
+          <p class="docs-nav__title">{tr(`section.${g.section}`)}</p>
+          {g.items.map((e) => (
+            <a href={entryUrl(e)} aria-current={entryUrl(e) === current ? 'page' : undefined}>{e.data.title}</a>
+          ))}
+        </div>
+      ))}
+    </nav>
+
+    <article>
+      <header class="doc-header">
+        <h1>{entry.data.title}</h1>
+        <p class="doc-description">{entry.data.description}</p>
+        {entry.data.draft && <p class="draft-note">{tr('docs.draft')}</p>}
+      </header>
+      <div class="prose">
+        <Content />
+      </div>
+      <nav class="docs-pager">
+        {prev && <a href={entryUrl(prev)} rel="prev"><small>{tr('docs.prev')}</small>{prev.data.title}</a>}
+        {next && <a class="next" href={entryUrl(next)} rel="next"><small>{tr('docs.next')}</small>{next.data.title}</a>}
+      </nav>
+    </article>
+
+    <aside class="docs-toc" aria-label={tr('docs.onThisPage')}>
+      {toc.length > 0 && <>
+        <p class="docs-toc__title">{tr('docs.onThisPage')}</p>
+        <div id="toc">
+          {toc.map((h) => <a href={`#${h.slug}`} class={h.depth === 3 ? 'level-3' : ''}>{h.text}</a>)}
+        </div>
+      </>}
+    </aside>
+  </div>
+
+  <script>
+    // Highlight the table-of-contents entry for the heading currently in view.
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#toc a'));
+    const targets = links.map((l) => document.getElementById(decodeURIComponent(l.hash.slice(1))));
+    const mark = () => {
+      let active = 0;
+      targets.forEach((el, i) => { if (el && el.getBoundingClientRect().top <= 110) active = i; });
+      links.forEach((l, i) => l.classList.toggle('active', i === active));
+    };
+    if (links.length) {
+      addEventListener('scroll', mark, { passive: true });
+      mark();
+    }
+  </script>
+</BaseLayout>

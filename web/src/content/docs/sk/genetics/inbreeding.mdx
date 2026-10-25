@@ -1,0 +1,34 @@
+---
+title: Ako sa počíta inbreeding
+description: Koeficient inbreedingu, Wrightova metóda ciest a niekoľko vypočítaných príkladov.
+section: genetics
+order: 0
+---
+**Koeficient inbreedingu** (COI, značený *F*) je pravdepodobnosť, že dve kópie génu u mačky pochádzajú od toho istého predka. Pohybuje sa od 0 (žiadni známi spoloční predkovia) do 1.
+
+## Wrightova metóda ciest
+
+Pre mačku X, ktorej rodičia majú jedného alebo viac spoločných predkov:
+
+```text
+F(X) = Σ (1/2)^(n1 + n2 + 1) × (1 + F(A))
+```
+
+Súčet beží cez každého spoločného predka A kocúra a mačky. `n1` je počet generácií od kocúra k A, `n2` počet generácií od mačky k A a `F(A)` je koeficient samotného predka. Ak predok nie je inbrední, `F(A)` je 0 a posledný činiteľ je 1.
+
+## Vypočítané príklady
+
+| Párenie | Spoloční predkovia | F mačiatok |
+| --- | --- | --- |
+| Súrodenci | obaja rodičia (n1 = 1, n2 = 1) | 25 % |
+| Rodič a potomok | rodič (n1 = 0, n2 = 1) | 25 % |
+| Polosúrodenci | jeden spoločný rodič (n1 = 1, n2 = 1) | 12,5 % |
+| Bratranci a sesternice | dvaja spoloční starí rodičia (n1 = 2, n2 = 2) | 6,25 % |
+
+## Od čoho číslo závisí
+
+Koeficient zohľadňuje len zaznamenaných predkov. Plytký rodokmeň dá nižšie číslo než skutočné, preto porovnávajte koeficienty vypočítané cez rovnaký počet generácií.
+
+## Skúšobné párenie
+
+Skúšobné párenie berie vybraného kocúra a mačku ako rodičov pomyselného mačiatka a použije uvedený vzorec na ich zaznamenaných predkov. Nič sa neukladá.

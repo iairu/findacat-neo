@@ -1,0 +1,103 @@
+---
+import { t, type Locale } from '../i18n/ui';
+import { localePath } from '../i18n/ui';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const tr = t(locale);
+const labels = { one: tr('search.one'), many: tr('search.many'), none: tr('search.none'), hint: tr('search.hint') };
+---
+<div id="search-modal" class="search-modal" hidden>
+  <div class="search-modal__overlay" data-close-search></div>
+  <div class="search-modal__panel" role="dialog" aria-modal="true" aria-label={tr('search.button')}>
+    <div class="search-modal__input">
+      <input id="search-input" type="search" placeholder={tr('search.placeholder')} aria-label={tr('search.placeholder')} autocomplete="off" />
+      <span id="search-count" class="search-modal__count" hidden></span>
+    </div>
+    <div id="search-results" class="search-modal__results" aria-live="polite">
+      <p class="search-empty">{labels.hint}</p>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ locale, labels, indexUrl: `/search-index/${locale}.json`, docsHome: localePath(locale, '/docs/') }}>
+  const modal = document.getElementById('search-modal');
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+  const count = document.getElementById('search-count');
+  const hintHtml = results.innerHTML;
+  let pages = null;
+  let matches = [];
+  let selected = 0;
+  let opener = null;
+
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const mark = (text, terms) => terms.reduce((out, term) => out.replace(new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'), esc(text));
+
+  async function load() {
+    if (pages) return;
+    try { pages = await (await fetch(indexUrl)).json(); } catch { pages = []; }
+  }
+  function open() {
+    opener = document.activeElement;
+    modal.hidden = false;
+    input.value = '';
+    results.innerHTML = hintHtml;
+    count.hidden = true;
+    input.focus();
+    load();
+  }
+  function close() {
+    modal.hidden = true;
+    if (opener && opener.focus) opener.focus();
+  }
+  function snippet(content, terms) {
+    const lower = content.toLowerCase();
+    const at = terms.map((t) => lower.indexOf(t)).find((i) => i >= 0) ?? -1;
+    if (at < 0) return content.slice(0, 90);
+    const start = Math.max(0, at - 30);
+    return (start ? '…' : '') + content.slice(start, at + 70) + '…';
+  }
+  function render(terms) {
+    if (!matches.length) { results.innerHTML = '<p class="search-empty">' + esc(labels.none) + '</p>'; return; }
+    results.innerHTML = matches.map((m, i) =>
+      '<a href="' + m.url + '" class="search-result' + (i === selected ? ' selected' : '') + '">' +
+      '<span class="title">' + mark(m.title, terms) + '</span><span class="tag">' + esc(m.section) + '</span>' +
+      '<span class="snippet">' + mark(snippet(m.content, terms), terms) + '</span></a>').join('');
+  }
+  function run() {
+    const terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (!terms.length || !pages) { matches = []; results.innerHTML = hintHtml; count.hidden = true; return; }
+    matches = pages
+      .map((p) => {
+        const title = p.title.toLowerCase();
+        const body = p.content.toLowerCase();
+        if (!terms.every((t) => title.includes(t) || body.includes(t))) return null;
+        return { p, score: terms.reduce((s, t) => s + (title.includes(t) ? 10 : 0) + (body.includes(t) ? 2 : 0), 0) };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.p);
+    selected = 0;
+    count.hidden = false;
+    count.textContent = matches.length + ' ' + (matches.length === 1 ? labels.one : labels.many);
+    render(terms);
+  }
+
+  document.querySelectorAll('[data-open-search]').forEach((b) => b.addEventListener('click', open));
+  modal.querySelector('[data-close-search]').addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open(); }
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+  input.addEventListener('input', run);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      selected = Math.max(0, Math.min(matches.length - 1, selected + (e.key === 'ArrowDown' ? 1 : -1)));
+      render(input.value.toLowerCase().trim().split(/\s+/).filter(Boolean));
+      results.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && matches[selected]) {
+      location.href = matches[selected].url;
+    }
+  });
+</script>

@@ -1,0 +1,34 @@
+---
+title: How inbreeding is calculated
+description: The coefficient of inbreeding, Wright's path method and a few worked examples.
+section: genetics
+order: 0
+---
+The **coefficient of inbreeding** (COI, written *F*) is the probability that the two copies of a gene in a cat came from the same ancestor. It ranges from 0 (no known shared ancestors) to 1.
+
+## Wright's path method
+
+For a cat X whose parents share one or more ancestors:
+
+```text
+F(X) = Σ (1/2)^(n1 + n2 + 1) × (1 + F(A))
+```
+
+The sum runs over every common ancestor A of the sire and the dam. `n1` is the number of generations from the sire to A, `n2` the number from the dam to A, and `F(A)` is the ancestor's own coefficient. When the ancestor is not inbred, `F(A)` is 0 and the last factor is 1.
+
+## Worked examples
+
+| Mating | Common ancestors | F of the kittens |
+| --- | --- | --- |
+| Full siblings | both parents (n1 = 1, n2 = 1) | 25 % |
+| Parent and offspring | the parent (n1 = 0, n2 = 1) | 25 % |
+| Half siblings | one shared parent (n1 = 1, n2 = 1) | 12.5 % |
+| First cousins | two shared grandparents (n1 = 2, n2 = 2) | 6.25 % |
+
+## What the number depends on
+
+The coefficient only counts ancestors that are recorded. A shallow pedigree gives a lower number than the real one, so compare coefficients computed over the same number of generations.
+
+## Test mating
+
+Test mating treats the chosen sire and dam as the parents of an imaginary kitten and applies the formula above to their recorded ancestors. Nothing is stored.

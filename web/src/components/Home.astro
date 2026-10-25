@@ -1,0 +1,117 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from './Icon.astro';
+import { localePath, type Locale } from '../i18n/ui';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+
+const copy = {
+  en: {
+    eyebrow: 'For cat breeders and enthusiasts',
+    title: 'Know a pedigree before you plan a litter.',
+    lead: 'Find A Cat keeps cat pedigrees in one place and calculates how related two cats are, so you can judge a planned mating before it happens.',
+    docs: 'Read the docs',
+    howDocs: 'How inbreeding is calculated',
+    caption: 'Example pedigree. Every cat links to its parents, grandparents and further back.',
+    featuresTitle: 'What you can do',
+    features: [
+      { icon: 'search', title: 'Find a cat', text: 'Search by name, breed, EMS colour or registration number and open a full profile.' },
+      { icon: 'tree', title: 'Read the pedigree', text: 'Follow a cat’s ancestors as a tree or a chart, as many generations as the records go.' },
+      { icon: 'pair', title: 'Test a mating', text: 'Pick a sire and a dam and see the coefficient of inbreeding of the kittens before you commit.' },
+      { icon: 'user', title: 'Register your cats', text: 'Create an account, add the cats you breed and link them to their parents.' },
+    ],
+    stepsTitle: 'How it works',
+    steps: [
+      { title: 'Add the cats', text: 'Enter each cat once with its breed, colour and parents.' },
+      { title: 'Link the family', text: 'Parents connect cats into a pedigree that grows with every litter.' },
+      { title: 'Check the match', text: 'The inbreeding coefficient is calculated from the shared ancestors of the pair.' },
+    ],
+    note: 'The cat database and accounts are being rebuilt. The documentation is available now.',
+  },
+  sk: {
+    eyebrow: 'Pre chovateľov a priaznivcov mačiek',
+    title: 'Poznajte rodokmeň ešte pred plánovaním vrhu.',
+    lead: 'Find A Cat drží rodokmene mačiek na jednom mieste a vypočíta, ako blízko sú dve mačky príbuzné, aby ste vedeli posúdiť plánované párenie vopred.',
+    docs: 'Čítať dokumentáciu',
+    howDocs: 'Ako sa počíta inbreeding',
+    caption: 'Ukážkový rodokmeň. Každá mačka odkazuje na rodičov, starých rodičov a ďalších predkov.',
+    featuresTitle: 'Čo môžete robiť',
+    features: [
+      { icon: 'search', title: 'Nájsť mačku', text: 'Hľadajte podľa mena, plemena, farby EMS alebo registračného čísla a otvorte celý profil.' },
+      { icon: 'tree', title: 'Čítať rodokmeň', text: 'Sledujte predkov mačky ako strom alebo graf, koľko generácií dovoľujú záznamy.' },
+      { icon: 'pair', title: 'Vyskúšať párenie', text: 'Vyberte kocúra a mačku a pozrite si koeficient inbreedingu mačiatok skôr, než sa rozhodnete.' },
+      { icon: 'user', title: 'Registrovať svoje mačky', text: 'Vytvorte si účet, pridajte mačky z vášho chovu a prepojte ich s rodičmi.' },
+    ],
+    stepsTitle: 'Ako to funguje',
+    steps: [
+      { title: 'Pridajte mačky', text: 'Každú mačku zadáte raz, s plemenom, farbou a rodičmi.' },
+      { title: 'Prepojte rodinu', text: 'Rodičia spájajú mačky do rodokmeňa, ktorý rastie s každým vrhom.' },
+      { title: 'Skontrolujte pár', text: 'Koeficient inbreedingu sa počíta zo spoločných predkov dvojice.' },
+    ],
+    note: 'Databáza mačiek a účty sa práve prebudúvajú. Dokumentácia je dostupná už teraz.',
+  },
+}[locale];
+---
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero__grid">
+      <div>
+        <p class="eyebrow">{copy.eyebrow}</p>
+        <h1>{copy.title}</h1>
+        <p class="hero__lead">{copy.lead}</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href={localePath(locale, '/docs/')}>{copy.docs} <Icon name="arrow" class="w-4 h-4" /></a>
+          <a class="btn btn--ghost" href={localePath(locale, '/docs/genetics/inbreeding/')}>{copy.howDocs}</a>
+        </div>
+      </div>
+      <figure class="pedigree-card">
+        <svg viewBox="0 0 300 190" role="img" aria-label={copy.caption}>
+          <g class="ped-line">
+            <path d="M92 95H120V50H148M92 95H120V140H148" />
+            <path d="M228 50H250V30H262M228 50H250V70H262" />
+            <path d="M228 140H250V120H262M228 140H250V160H262" />
+          </g>
+          <g>
+            <rect class="ped-box ped-box--focus" x="8" y="75" width="84" height="40" rx="8" />
+            <text class="ped-text" x="18" y="93">Luna</text><text class="ped-sub" x="18" y="106">Maine Coon</text>
+            <rect class="ped-box" x="148" y="30" width="80" height="40" rx="8" />
+            <text class="ped-text" x="158" y="48">Oskar</text><text class="ped-sub" x="158" y="61">sire</text>
+            <rect class="ped-box" x="148" y="120" width="80" height="40" rx="8" />
+            <text class="ped-text" x="158" y="138">Mia</text><text class="ped-sub" x="158" y="151">dam</text>
+            <rect class="ped-box" x="262" y="14" width="32" height="32" rx="6" /><rect class="ped-box" x="262" y="54" width="32" height="32" rx="6" />
+            <rect class="ped-box" x="262" y="104" width="32" height="32" rx="6" /><rect class="ped-box" x="262" y="144" width="32" height="32" rx="6" />
+          </g>
+        </svg>
+        <figcaption>{copy.caption}</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section__head"><h2>{copy.featuresTitle}</h2></div>
+      <div class="card-grid">
+        {copy.features.map((f) => (
+          <div class="card">
+            <span class="card__icon"><Icon name={f.icon as 'search'} /></span>
+            <h3>{f.title}</h3>
+            <p>{f.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section__head">
+        <h2>{copy.stepsTitle}</h2>
+        <p>{copy.note}</p>
+      </div>
+      <ol class="steps">
+        {copy.steps.map((s) => <li><h3>{s.title}</h3><p>{s.text}</p></li>)}
+      </ol>
+    </div>
+  </section>
+</BaseLayout>

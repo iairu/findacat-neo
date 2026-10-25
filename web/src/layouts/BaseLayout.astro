@@ -1,0 +1,83 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import Icon from '../components/Icon.astro';
+import SearchModal from '../components/SearchModal.astro';
+import { getLocale, localePath, switchLocalePath, t } from '../i18n/ui';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const locale = getLocale(Astro.url.pathname);
+const tr = t(locale);
+const { title, description = tr('site.tagline') } = Astro.props;
+const pageTitle = title ? `${title} · ${tr('site.name')}` : `${tr('site.name')} · ${tr('site.tagline')}`;
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const docsHome = localePath(locale, '/docs/').replace(/\/$/, '');
+const inDocs = path === docsHome || path.startsWith(docsHome + '/');
+const other = locale === 'sk' ? 'en' : 'sk';
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" hreflang={other} href={new URL(switchLocalePath(locale, Astro.url.pathname), Astro.site)} />
+    <script is:inline>
+      // Apply the saved or system theme before first paint to avoid a flash.
+      try {
+        var saved = localStorage.getItem('theme');
+        var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">{tr('nav.skip')}</a>
+    <SearchModal locale={locale} />
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href={localePath(locale, '/')}>
+          <Logo /> {tr('site.name')}
+        </a>
+        <nav class="site-nav" aria-label={tr('nav.primary')}>
+          <a class="nav-link" href={localePath(locale, '/')} aria-current={path === localePath(locale, '/').replace(/\/$/, '') || path === '/' ? 'page' : undefined}>{tr('nav.home')}</a>
+          <a class="nav-link" href={localePath(locale, '/docs/')} aria-current={inDocs ? 'page' : undefined}>{tr('nav.docs')}</a>
+        </nav>
+        <button type="button" class="search-btn" data-open-search aria-label={tr('search.button')}>
+          <Icon name="search" /><span>{tr('search.button')}</span><kbd>Ctrl K</kbd>
+        </button>
+        <a class="lang-btn" href={switchLocalePath(locale, Astro.url.pathname)} hreflang={other} lang={other} aria-label={tr('lang.switchLabel')}>{other.toUpperCase()}</a>
+        <button type="button" class="icon-btn" id="theme-toggle" aria-label={tr('theme.toggle')}>
+          <Icon name="moon" class="theme-moon" /><Icon name="sun" class="theme-sun" />
+        </button>
+      </div>
+    </header>
+
+    <main id="content">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <span>{tr('site.name')} · findacat.eu</span>
+        <span>{tr('footer.license')}</span>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('theme', next); } catch {}
+      });
+    </script>
+  </body>
+</html>
