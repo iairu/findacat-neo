@@ -20,8 +20,11 @@
     $host = $env('VERCEL_ENV') === 'production' ? $env('VERCEL_PROJECT_PRODUCTION_URL') : $env('VERCEL_URL');
     $siteUrl = $host === null ? null : "https://{$host}";
 
-    // A database added through the Vercel Marketplace (Neon, Supabase, …) sets one of these.
-    $databaseUrl = $env('DB_URL') ?? $env('DATABASE_URL') ?? $env('POSTGRES_URL');
+    // A database added through the Vercel Marketplace (Neon, Supabase, …) sets one of these. Requests
+    // use the pooled URL; the build migrates over the direct one, as poolers break transactional DDL.
+    $pooledUrl = $env('DATABASE_URL') ?? $env('POSTGRES_URL');
+    $directUrl = $env('DATABASE_URL_UNPOOLED') ?? $env('POSTGRES_URL_NON_POOLING');
+    $databaseUrl = $env('DB_URL') ?? (PHP_SAPI === 'cli' ? $directUrl ?? $pooledUrl : $pooledUrl ?? $directUrl);
     $driver = match (strtolower((string) parse_url((string) $databaseUrl, PHP_URL_SCHEME))) {
         'postgres', 'postgresql', 'pgsql' => 'pgsql',
         'mysql', 'mariadb' => 'mysql',

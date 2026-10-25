@@ -80,6 +80,7 @@ Push to the production branch. Vercel builds and deploys it, and the build appli
 ## Troubleshooting
 
 - **The build log says "No database reachable":** connect a database as described above and redeploy.
+- **A migration fails with `current transaction is aborted`:** the build is migrating through a connection pooler. With Neon it uses the direct connection (`DATABASE_URL_UNPOOLED`) automatically; if you set `DB_URL` yourself, point it at the direct host (without `-pooler`).
 - **The build fails in the PHP step:** open the build log. A migration error stops the deployment so that a half-migrated database never goes live.
 - **`/api/health` works but other pages return "Server Error":** look in **Logs** for the function. A missing `cache` or `sessions` table or `No application encryption key` means the build ran without a database; redeploy.
 - **Everyone was signed out:** the key lives in the `app_secrets` table, so a new or reset database gets a new key. Set `APP_KEY` to keep one across databases.

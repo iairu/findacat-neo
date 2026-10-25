@@ -80,6 +80,7 @@ Odošlite zmeny do produkčnej vetvy. Vercel ich zostaví a nasadí a zostavenie
 ## Riešenie problémov
 
 - **Log zostavenia hlási „No database reachable“:** pripojte databázu podľa návodu vyššie a nasaďte znova.
+- **Migrácia zlyhá s chybou `current transaction is aborted`:** zostavenie migruje cez pooler pripojení. Pri Neone automaticky použije priame pripojenie (`DATABASE_URL_UNPOOLED`); ak ste `DB_URL` nastavili sami, nasmerujte ho na priamy server (bez `-pooler`).
 - **Zostavenie zlyhá v kroku PHP:** pozrite si log zostavenia. Chyba migrácie zastaví nasadenie, aby sa nikdy nespustila napoly migrovaná databáza.
 - **`/api/health` funguje, ostatné požiadavky vracajú „Server Error“:** pozrite si **Logs** funkcie. Chýbajúca tabuľka `cache` alebo `sessions` či hlásenie `No application encryption key` znamenajú, že zostavenie prebehlo bez databázy; nasaďte znova.
 - **Všetci boli odhlásení:** kľúč je v tabuľke `app_secrets`, takže nová alebo vymazaná databáza dostane nový kľúč. Ak ho chcete zachovať naprieč databázami, nastavte `APP_KEY`.
