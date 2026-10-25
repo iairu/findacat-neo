@@ -1,27 +1,56 @@
+// Enhanced CryptoKitties-inspired Theme Variables
+
+// Light Mode Colors
+$body-bg-light: #f8f4ff;
+$primary-light: #6c5ce7;
+$secondary-light: #fd79a8;
+$accent-light: #fdcb6e;
+$success-light: #00b894;
+$info-light: #74b9ff;
+$warning-light: #ffeaa7;
+$danger-light: #ff7675;
+$card-bg-light: #ffffff;
+$text-light: #2d3436;
+$text-secondary-light: #636e72;
+$border-light: #e1d5ff;
+
+// Dark Mode Colors
+$body-bg-dark: #1a1a2e;
+$primary-dark: #a29bfe;
+$secondary-dark: #fd79a8;
+$accent-dark: #fdcb6e;
+$success-dark: #00b894;
+$info-dark: #74b9ff;
+$warning-dark: #ffeaa7;
+$danger-dark: #ff7675;
+$card-bg-dark: #16213e;
+$text-dark: #eee;
+$text-secondary-dark: #b2bec3;
+$border-dark: #2d3561;
 
 // Body
-$body-bg: #f5f8fa;
+$body-bg: $body-bg-light;
 
 // Borders
-$laravel-border-color: darken($body-bg, 10%);
+$laravel-border-color: $border-light;
 $list-group-border: $laravel-border-color;
 $navbar-default-border: $laravel-border-color;
 $panel-default-border: $laravel-border-color;
 $panel-inner-border: $laravel-border-color;
 
 // Brands
-$brand-primary: #3097D1;
-$brand-info: #8eb4cb;
-$brand-success: #2ab27b;
-$brand-warning: #cbb956;
-$brand-danger: #bf5329;
+$brand-primary: $primary-light;
+$brand-info: $info-light;
+$brand-success: $success-light;
+$brand-warning: $warning-light;
+$brand-danger: $danger-light;
 
 // Typography
 $icon-font-path: "../fonts/bootstrap/";
-$font-family-sans-serif: "Trebuchet MS", sans-serif;
-$font-size-base: 14px;
+$font-family-sans-serif: "Nunito", "Trebuchet MS", sans-serif;
+$font-size-base: 15px;
 $line-height-base: 1.6;
-$text-color: #636b6f;
+$text-color: $text-light;
 
 // Navbar
 $navbar-default-bg: transparent;
@@ -30,9 +59,14 @@ $navbar-default-bg: transparent;
 $btn-default-color: $text-color;
 
 // Inputs
-$input-border: lighten($text-color, 40%);
-$input-border-focus: lighten($brand-primary, 25%);
-$input-color-placeholder: lighten($text-color, 30%);
+$input-border: $border-light;
+$input-border-focus: $primary-light;
+$input-color-placeholder: $text-secondary-light;
 
 // Panels
 $panel-default-heading-bg: #fff;
+
+// Animations
+$transition-fast: 0.2s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;

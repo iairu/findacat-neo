@@ -1,0 +1,202 @@
+/**
+ * Animated Cats Background
+ * Cute animated cats floating in the background
+ */
+
+.animated-cats-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.animated-cat {
+    position: absolute;
+    font-size: 48px;
+    opacity: 0.3;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    transition: opacity 0.3s ease;
+}
+
+body.dark-mode .animated-cat {
+    opacity: 0.2;
+}
+
+/* Different cat emojis */
+.animated-cat.cat-1::before { content: '🐱'; }
+.animated-cat.cat-2::before { content: '😺'; }
+.animated-cat.cat-3::before { content: '😸'; }
+.animated-cat.cat-4::before { content: '😻'; }
+.animated-cat.cat-5::before { content: '😽'; }
+.animated-cat.cat-6::before { content: '🐈'; }
+.animated-cat.cat-7::before { content: '🐈‍⬛'; }
+
+/* Floating animations */
+@keyframes float-cat-1 {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+        transform: translate(100px, -50px) rotate(5deg);
+    }
+    50% {
+        transform: translate(50px, -100px) rotate(-5deg);
+    }
+    75% {
+        transform: translate(-50px, -50px) rotate(5deg);
+    }
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+}
+
+@keyframes float-cat-2 {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    33% {
+        transform: translate(-80px, 60px) rotate(-10deg) scale(1.1);
+    }
+    66% {
+        transform: translate(80px, 30px) rotate(10deg) scale(0.9);
+    }
+    100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+}
+
+@keyframes float-cat-3 {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    50% {
+        transform: translate(-100px, 100px) rotate(180deg);
+    }
+    100% {
+        transform: translate(0, 0) rotate(360deg);
+    }
+}
+
+@keyframes float-cat-4 {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-100px) rotate(90deg);
+    }
+    50% {
+        transform: translateY(0) rotate(180deg);
+    }
+    75% {
+        transform: translateY(-50px) rotate(270deg);
+    }
+}
+
+@keyframes float-cat-5 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    25% {
+        transform: translate(150px, -100px) scale(1.2);
+    }
+    50% {
+        transform: translate(100px, 50px) scale(0.8);
+    }
+    75% {
+        transform: translate(-100px, -50px) scale(1.1);
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+/* Assign animations to cats */
+.animated-cat:nth-child(1) {
+    animation: float-cat-1 20s infinite;
+    top: 10%;
+    left: 10%;
+}
+
+.animated-cat:nth-child(2) {
+    animation: float-cat-2 25s infinite;
+    top: 20%;
+    right: 15%;
+    animation-delay: -5s;
+}
+
+.animated-cat:nth-child(3) {
+    animation: float-cat-3 30s infinite;
+    bottom: 20%;
+    left: 20%;
+    animation-delay: -10s;
+}
+
+.animated-cat:nth-child(4) {
+    animation: float-cat-4 18s infinite;
+    top: 60%;
+    right: 25%;
+    animation-delay: -7s;
+}
+
+.animated-cat:nth-child(5) {
+    animation: float-cat-5 22s infinite;
+    bottom: 30%;
+    right: 10%;
+    animation-delay: -12s;
+}
+
+.animated-cat:nth-child(6) {
+    animation: float-cat-1 28s infinite;
+    top: 40%;
+    left: 5%;
+    animation-delay: -15s;
+    font-size: 36px;
+}
+
+.animated-cat:nth-child(7) {
+    animation: float-cat-2 24s infinite;
+    top: 70%;
+    left: 40%;
+    animation-delay: -8s;
+    font-size: 40px;
+}
+
+.animated-cat:nth-child(8) {
+    animation: float-cat-3 26s infinite;
+    top: 15%;
+    left: 60%;
+    animation-delay: -18s;
+    font-size: 44px;
+}
+
+/* Hover effect */
+.animated-cat:hover {
+    opacity: 0.6;
+    animation-play-state: paused;
+    cursor: pointer;
+    transform: scale(1.5) !important;
+    transition: all 0.3s ease;
+}
+
+/* Mobile - fewer cats, smaller */
+@media (max-width: 767px) {
+    .animated-cat {
+        font-size: 32px;
+    }
+
+    .animated-cat:nth-child(n+6) {
+        display: none;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .animated-cat {
+        animation: none;
+    }
+}

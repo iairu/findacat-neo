@@ -1,0 +1,348 @@
+/**
+ * Theme Selector UI Styles
+ */
+
+/* ==========================================
+   THEME SELECTOR PANEL (Homepage)
+   ========================================== */
+
+.theme-selector-panel {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 30px;
+    margin: 30px 0;
+    box-shadow: var(--shadow-lg);
+    animation: scaleIn 0.6s ease;
+}
+
+.theme-selector-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.theme-selector-header h3 {
+    font-size: 32px;
+    margin: 0 0 10px 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.theme-selector-header p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
+}
+
+.theme-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.theme-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.theme-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.theme-card.active {
+    border-color: var(--primary);
+    border-width: 3px;
+    box-shadow: var(--shadow-md);
+}
+
+.theme-preview {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-preview::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255,255,255,0.1) 10px,
+        rgba(255,255,255,0.1) 20px
+    );
+}
+
+.theme-icon {
+    font-size: 48px;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+.theme-info {
+    padding: 15px;
+    text-align: center;
+}
+
+.theme-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.theme-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.theme-checkmark {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: var(--success);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+}
+
+.theme-card.active .theme-checkmark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ==========================================
+   QUICK THEME SELECTOR (Floating)
+   ========================================== */
+
+.quick-theme-selector {
+    position: fixed;
+    bottom: 110px;
+    right: 30px;
+    background: var(--bg-card);
+    border-radius: 15px;
+    box-shadow: var(--shadow-lg);
+    padding: 15px;
+    min-width: 200px;
+    z-index: 10001;
+    animation: slideInUp 0.3s ease;
+}
+
+.quick-theme-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.quick-theme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.quick-theme-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.quick-theme-item:hover {
+    background: rgba(108, 92, 231, 0.1);
+}
+
+.quick-theme-item.active {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.quick-theme-icon {
+    font-size: 24px;
+}
+
+.quick-theme-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.quick-theme-check {
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.quick-theme-item.active .quick-theme-check {
+    opacity: 1;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE
+   ========================================== */
+
+@media (max-width: 767px) {
+    .theme-selector-panel {
+        padding: 20px 15px;
+        margin: 20px 0;
+    }
+
+    .theme-selector-header h3 {
+        font-size: 24px;
+    }
+
+    .theme-selector-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .theme-preview {
+        height: 100px;
+    }
+
+    .theme-icon {
+        font-size: 36px;
+    }
+
+    .theme-name {
+        font-size: 16px;
+    }
+
+    .theme-description {
+        font-size: 12px;
+    }
+
+    .quick-theme-selector {
+        bottom: 80px;
+        right: 15px;
+        left: 15px;
+        min-width: auto;
+    }
+
+    .quick-theme-list {
+        max-height: 300px;
+    }
+}
+
+/* ==========================================
+   THEME-SPECIFIC ENHANCEMENTS
+   ========================================== */
+
+/* Neon theme glow effects */
+[data-theme="neon"] .theme-card {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+[data-theme="neon"] .theme-card:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+/* Retro theme pixelated effect */
+[data-theme="retro"] .theme-card {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* Future theme sci-fi effect */
+[data-theme="future"] .theme-preview::after {
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 217, 255, 0.1) 2px,
+        rgba(0, 217, 255, 0.1) 4px
+    );
+}
+
+/* macOS theme blur effect */
+[data-theme="macos"] .theme-card {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="macos"].dark-mode .theme-card {
+    background: rgba(30, 30, 30, 0.7);
+}
+
+/* Windows theme acrylic effect */
+[data-theme="windows"] .theme-card {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+
+@media print {
+    .theme-selector-panel,
+    .quick-theme-selector {
+        display: none !important;
+    }
+}

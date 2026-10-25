@@ -84,6 +84,15 @@ Route::controller(BackupsController::class)->group(function () {
 });
 Route::resource('backups', BackupsController::class);
 
+/**
+ * External Data Integration Routes
+ */
+Route::prefix('api')->group(function () {
+    Route::post('fetch-pawpeds', [\App\Http\Controllers\ExternalDataController::class, 'fetchFromPawPeds'])->name('api.fetch-pawpeds');
+    Route::post('search-pawpeds', [\App\Http\Controllers\ExternalDataController::class, 'searchPawPeds'])->name('api.search-pawpeds');
+    Route::get('stats', [\App\Http\Controllers\ExternalDataController::class, 'getStats'])->name('api.stats');
+});
+
 });
 Route::post('/language/change', [LocalizationController::class, 'changeLanguage'])->name('language.change');
 

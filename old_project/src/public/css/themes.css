@@ -1,0 +1,337 @@
+/**
+ * FindACat Theme System
+ * Multiple beautiful themes for different moods and preferences
+ */
+
+/* ==========================================
+   BASE THEME STRUCTURE
+   ========================================== */
+
+:root {
+    /* Will be overridden by selected theme */
+}
+
+/* ==========================================
+   CLASSIC THEME (Default)
+   ========================================== */
+
+[data-theme="classic"],
+:root {
+    --bg-primary: #f8f4ff;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --text-primary: #2d3436;
+    --text-secondary: #636e72;
+    --border-color: #e1d5ff;
+    --shadow-sm: 0 2px 8px rgba(108, 92, 231, 0.08);
+    --shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
+    --shadow-lg: 0 8px 32px rgba(108, 92, 231, 0.16);
+    --primary: #6c5ce7;
+    --secondary: #fd79a8;
+    --accent: #fdcb6e;
+    --success: #00b894;
+    --info: #74b9ff;
+    --warning: #ffeaa7;
+    --danger: #ff7675;
+    --gradient-primary: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    --gradient-secondary: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+    --gradient-accent: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+}
+
+/* ==========================================
+   NEON THEME
+   ========================================== */
+
+[data-theme="neon"] {
+    --bg-primary: #0a0e27;
+    --bg-secondary: #141938;
+    --bg-card: #1a1f3a;
+    --text-primary: #00ffff;
+    --text-secondary: #00cccc;
+    --border-color: #00ffff;
+    --shadow-sm: 0 2px 8px rgba(0, 255, 255, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 255, 255, 0.4);
+    --shadow-lg: 0 8px 32px rgba(255, 0, 255, 0.5);
+    --primary: #00ffff;
+    --secondary: #ff00ff;
+    --accent: #ffff00;
+    --success: #00ff00;
+    --info: #00ccff;
+    --warning: #ffcc00;
+    --danger: #ff0080;
+    --gradient-primary: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%);
+    --gradient-secondary: linear-gradient(135deg, #ff00ff 0%, #ffff00 100%);
+    --gradient-accent: linear-gradient(135deg, #00ff00 0%, #00ffff 100%);
+}
+
+[data-theme="neon"] body {
+    background: #0a0e27;
+}
+
+[data-theme="neon"] .panel,
+[data-theme="neon"] .card {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+[data-theme="neon"] h1,
+[data-theme="neon"] h2,
+[data-theme="neon"] h3 {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+/* ==========================================
+   RETRO THEME (80s/90s Style)
+   ========================================== */
+
+[data-theme="retro"] {
+    --bg-primary: #f5e6d3;
+    --bg-secondary: #fff8e7;
+    --bg-card: #fff8e7;
+    --text-primary: #2c1810;
+    --text-secondary: #6b4423;
+    --border-color: #d4a574;
+    --shadow-sm: 0 3px 6px rgba(44, 24, 16, 0.1);
+    --shadow-md: 0 6px 12px rgba(44, 24, 16, 0.15);
+    --shadow-lg: 0 10px 25px rgba(44, 24, 16, 0.2);
+    --primary: #e67e22;
+    --secondary: #e74c3c;
+    --accent: #f39c12;
+    --success: #27ae60;
+    --info: #3498db;
+    --warning: #f39c12;
+    --danger: #c0392b;
+    --gradient-primary: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    --gradient-secondary: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    --gradient-accent: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+[data-theme="retro"] * {
+    font-family: 'Courier New', monospace;
+}
+
+[data-theme="retro"] .panel,
+[data-theme="retro"] .card {
+    border: 3px solid var(--primary);
+    box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================
+   FUTURE THEME (Futuristic/Sci-Fi)
+   ========================================== */
+
+[data-theme="future"] {
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f29;
+    --bg-card: #1e2530;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0a6;
+    --border-color: #00d9ff;
+    --shadow-sm: 0 2px 8px rgba(0, 217, 255, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 217, 255, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 217, 255, 0.4);
+    --primary: #00d9ff;
+    --secondary: #00ff88;
+    --accent: #ff00aa;
+    --success: #00ff88;
+    --info: #00d9ff;
+    --warning: #ffaa00;
+    --danger: #ff0055;
+    --gradient-primary: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+    --gradient-secondary: linear-gradient(135deg, #00ff88 0%, #00d9ff 100%);
+    --gradient-accent: linear-gradient(135deg, #ff00aa 0%, #ffaa00 100%);
+}
+
+[data-theme="future"] .panel,
+[data-theme="future"] .card {
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.05) 0%, rgba(0, 255, 136, 0.05) 100%);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+/* ==========================================
+   SOOTHING THEME (Calm/Zen)
+   ========================================== */
+
+[data-theme="soothing"] {
+    --bg-primary: #e8f5e9;
+    --bg-secondary: #f1f8f4;
+    --bg-card: #ffffff;
+    --text-primary: #2e4a3e;
+    --text-secondary: #5a7a68;
+    --border-color: #b2dfb2;
+    --shadow-sm: 0 2px 8px rgba(46, 74, 62, 0.08);
+    --shadow-md: 0 4px 16px rgba(46, 74, 62, 0.12);
+    --shadow-lg: 0 8px 32px rgba(46, 74, 62, 0.16);
+    --primary: #4caf50;
+    --secondary: #81c784;
+    --accent: #66bb6a;
+    --success: #4caf50;
+    --info: #4dd0e1;
+    --warning: #ffb74d;
+    --danger: #ef5350;
+    --gradient-primary: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+    --gradient-secondary: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+    --gradient-accent: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+}
+
+/* ==========================================
+   MACOS THEME (Apple Style)
+   ========================================== */
+
+[data-theme="macos"] {
+    --bg-primary: #f5f5f7;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --border-color: #d2d2d7;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+    --primary: #007aff;
+    --secondary: #5856d6;
+    --accent: #ff9500;
+    --success: #34c759;
+    --info: #5ac8fa;
+    --warning: #ff9500;
+    --danger: #ff3b30;
+    --gradient-primary: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+    --gradient-secondary: linear-gradient(135deg, #5856d6 0%, #007aff 100%);
+    --gradient-accent: linear-gradient(135deg, #ff9500 0%, #ff6482 100%);
+}
+
+[data-theme="macos"] * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+[data-theme="macos"] .panel,
+[data-theme="macos"] .card {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* ==========================================
+   WINDOWS THEME (Microsoft Style)
+   ========================================== */
+
+[data-theme="windows"] {
+    --bg-primary: #f3f3f3;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --border-color: #d1d1d1;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16);
+    --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.20);
+    --primary: #0078d4;
+    --secondary: #107c10;
+    --accent: #ffb900;
+    --success: #107c10;
+    --info: #00b7c3;
+    --warning: #ffb900;
+    --danger: #e81123;
+    --gradient-primary: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+    --gradient-secondary: linear-gradient(135deg, #107c10 0%, #0e6b0e 100%);
+    --gradient-accent: linear-gradient(135deg, #ffb900 0%, #ff8c00 100%);
+}
+
+[data-theme="windows"] * {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+}
+
+[data-theme="windows"] .panel,
+[data-theme="windows"] .card {
+    border: 1px solid #e1e1e1;
+}
+
+/* ==========================================
+   OCEAN THEME (Blue/Aqua)
+   ========================================== */
+
+[data-theme="ocean"] {
+    --bg-primary: #e0f7fa;
+    --bg-secondary: #f0fbff;
+    --bg-card: #ffffff;
+    --text-primary: #006064;
+    --text-secondary: #00838f;
+    --border-color: #80deea;
+    --shadow-sm: 0 2px 8px rgba(0, 96, 100, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 96, 100, 0.12);
+    --shadow-lg: 0 8px 32px rgba(0, 96, 100, 0.16);
+    --primary: #00acc1;
+    --secondary: #0097a7;
+    --accent: #00bcd4;
+    --success: #00796b;
+    --info: #0288d1;
+    --warning: #ffa726;
+    --danger: #ef5350;
+    --gradient-primary: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+    --gradient-secondary: linear-gradient(135deg, #0097a7 0%, #00838f 100%);
+    --gradient-accent: linear-gradient(135deg, #00bcd4 0%, #00acc1 100%);
+}
+
+/* ==========================================
+   SUNSET THEME (Warm Colors)
+   ========================================== */
+
+[data-theme="sunset"] {
+    --bg-primary: #fff3e0;
+    --bg-secondary: #fff8f0;
+    --bg-card: #ffffff;
+    --text-primary: #e65100;
+    --text-secondary: #f57c00;
+    --border-color: #ffcc80;
+    --shadow-sm: 0 2px 8px rgba(230, 81, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(230, 81, 0, 0.12);
+    --shadow-lg: 0 8px 32px rgba(230, 81, 0, 0.16);
+    --primary: #ff6f00;
+    --secondary: #ff5722;
+    --accent: #ffa726;
+    --success: #66bb6a;
+    --info: #29b6f6;
+    --warning: #ffb74d;
+    --danger: #ef5350;
+    --gradient-primary: linear-gradient(135deg, #ff6f00 0%, #ff5722 100%);
+    --gradient-secondary: linear-gradient(135deg, #ff5722 0%, #ff6f00 100%);
+    --gradient-accent: linear-gradient(135deg, #ffa726 0%, #ff8a65 100%);
+}
+
+/* ==========================================
+   MIDNIGHT THEME (Dark Blue)
+   ========================================== */
+
+[data-theme="midnight"] {
+    --bg-primary: #0d1b2a;
+    --bg-secondary: #1b263b;
+    --bg-card: #1b263b;
+    --text-primary: #e0e1dd;
+    --text-secondary: #778da9;
+    --border-color: #415a77;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --primary: #415a77;
+    --secondary: #778da9;
+    --accent: #e0e1dd;
+    --success: #06d6a0;
+    --info: #118ab2;
+    --warning: #ffd166;
+    --danger: #ef476f;
+    --gradient-primary: linear-gradient(135deg, #415a77 0%, #778da9 100%);
+    --gradient-secondary: linear-gradient(135deg, #778da9 0%, #415a77 100%);
+    --gradient-accent: linear-gradient(135deg, #e0e1dd 0%, #778da9 100%);
+}
+
+/* ==========================================
+   THEME TRANSITION
+   ========================================== */
+
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Don't transition transforms and opacity (for animations) */
+*[style*="transform"],
+*[style*="opacity"] {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+}

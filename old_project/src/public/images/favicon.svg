@@ -1,0 +1,70 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <circle cx="64" cy="64" r="64" fill="url(#gradient1)"/>
+
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a29bfe;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fd79a8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fdcb6e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Cat silhouette -->
+  <g transform="translate(64, 64)">
+    <!-- Left ear -->
+    <path d="M -25 -30 L -30 -45 L -18 -35 Z" fill="#ffffff" opacity="0.95"/>
+
+    <!-- Right ear -->
+    <path d="M 25 -30 L 30 -45 L 18 -35 Z" fill="#ffffff" opacity="0.95"/>
+
+    <!-- Cat head -->
+    <circle cx="0" cy="-20" r="22" fill="#ffffff" opacity="0.95"/>
+
+    <!-- Cat body -->
+    <ellipse cx="0" cy="10" rx="18" ry="25" fill="#ffffff" opacity="0.95"/>
+
+    <!-- Left eye -->
+    <ellipse cx="-8" cy="-22" rx="3" ry="5" fill="url(#gradient2)"/>
+
+    <!-- Right eye -->
+    <ellipse cx="8" cy="-22" rx="3" ry="5" fill="url(#gradient2)"/>
+
+    <!-- Nose -->
+    <path d="M 0 -15 L -2 -12 L 2 -12 Z" fill="url(#gradient2)"/>
+
+    <!-- Mouth -->
+    <path d="M 0 -12 Q -4 -10 -6 -12 M 0 -12 Q 4 -10 6 -12"
+          stroke="url(#gradient2)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Tail -->
+    <path d="M 15 25 Q 25 30 28 18 Q 30 10 25 5"
+          stroke="#ffffff" stroke-width="6" fill="none"
+          stroke-linecap="round" opacity="0.95"/>
+
+    <!-- Whiskers left -->
+    <line x1="-10" y1="-18" x2="-25" y2="-20" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+    <line x1="-10" y1="-15" x2="-25" y2="-15" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+
+    <!-- Whiskers right -->
+    <line x1="10" y1="-18" x2="25" y2="-20" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+    <line x1="10" y1="-15" x2="25" y2="-15" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+
+    <!-- Paws -->
+    <ellipse cx="-8" cy="33" rx="4" ry="3" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="8" cy="33" rx="4" ry="3" fill="#ffffff" opacity="0.95"/>
+  </g>
+
+  <!-- Paw print accent (small) -->
+  <g transform="translate(95, 95)" opacity="0.3">
+    <circle cx="0" cy="0" r="3" fill="#ffffff"/>
+    <circle cx="-4" cy="2" r="2" fill="#ffffff"/>
+    <circle cx="4" cy="2" r="2" fill="#ffffff"/>
+    <circle cx="-3" cy="5" r="1.5" fill="#ffffff"/>
+    <circle cx="3" cy="5" r="1.5" fill="#ffffff"/>
+  </g>
+</svg>

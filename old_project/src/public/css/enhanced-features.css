@@ -1,0 +1,638 @@
+/**
+ * FindACat Enhanced Features CSS
+ * Drag-drop, PawPeds, SPA navigation, live stats
+ */
+
+/* ==========================================
+   PAGE LOADING STATE
+   ========================================== */
+
+body.page-loading {
+    cursor: wait;
+}
+
+body.page-loading * {
+    pointer-events: none;
+}
+
+#main-content,
+.container {
+    transition: opacity 0.3s ease;
+}
+
+/* ==========================================
+   DRAG AND DROP PHOTO UPLOAD
+   ========================================== */
+
+.drag-drop-zone {
+    border: 3px dashed var(--border-color);
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+    margin: 15px 0;
+}
+
+.drag-drop-zone:hover {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.05);
+    transform: scale(1.02);
+}
+
+.drag-drop-zone.drag-over {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.1);
+    border-style: solid;
+    box-shadow: var(--shadow-lg);
+}
+
+.drag-drop-inner {
+    pointer-events: none;
+}
+
+.drag-drop-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.drag-drop-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.drag-drop-text strong {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.drag-drop-text span {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.drag-drop-preview {
+    margin-top: 20px;
+    display: none;
+}
+
+.drag-drop-zone.has-file .drag-drop-icon {
+    display: none;
+}
+
+.drag-drop-zone.has-file .drag-drop-text {
+    display: none;
+}
+
+.drag-drop-zone.has-file .drag-drop-preview {
+    display: block;
+}
+
+.drag-drop-preview img {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 15px;
+    box-shadow: var(--shadow-md);
+    animation: scaleIn 0.3s ease;
+}
+
+/* ==========================================
+   PAWPEDS FETCH BUTTON
+   ========================================== */
+
+.pawpeds-fetch-btn {
+    background: var(--gradient-secondary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pawpeds-fetch-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.pawpeds-fetch-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+input.auto-filled,
+select.auto-filled,
+textarea.auto-filled {
+    background: rgba(0, 184, 148, 0.1);
+    border-color: var(--success);
+    animation: pulse 0.5s ease;
+}
+
+/* ==========================================
+   LIVE STATS INDICATOR
+   ========================================== */
+
+.live-stats-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    background: rgba(0, 184, 148, 0.1);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 10px;
+}
+
+.live-stats-indicator:hover {
+    background: rgba(0, 184, 148, 0.2);
+    transform: scale(1.05);
+}
+
+.stats-blink {
+    color: var(--success);
+    font-size: 18px;
+    animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.stats-number {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stats-text {
+    display: flex;
+    gap: 4px;
+}
+
+/* ==========================================
+   ENHANCED BACKUP SYSTEM
+   ========================================== */
+
+.backup-drag-zone {
+    border: 3px dashed var(--border-color);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+    margin: 20px 0;
+}
+
+.backup-drag-zone:hover {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.05);
+}
+
+.backup-drag-zone.drag-active {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.1);
+    border-style: solid;
+    box-shadow: var(--shadow-lg);
+    transform: scale(1.02);
+}
+
+.backup-drag-inner {
+    pointer-events: none;
+}
+
+.backup-drag-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.backup-drag-text {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+
+.backup-drag-text strong {
+    font-size: 16px;
+}
+
+.backup-drag-text span {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.backup-file-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin: 15px 0;
+    display: none;
+}
+
+.backup-drag-zone.has-file .backup-file-name {
+    display: block;
+}
+
+.backup-drag-zone.has-file .backup-drag-icon,
+.backup-drag-zone.has-file .backup-drag-text {
+    display: none;
+}
+
+.backup-progress {
+    margin-top: 15px;
+    display: none;
+}
+
+.backup-drag-zone.uploading .backup-progress {
+    display: block;
+}
+
+.backup-progress-bar {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.backup-progress-bar::after {
+    content: '';
+    display: block;
+    height: 100%;
+    background: var(--gradient-primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.backup-progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ==========================================
+   BACKUP PAGE LAYOUT IMPROVEMENTS
+   ========================================== */
+
+.backup-section {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: var(--shadow-md);
+    animation: slideInUp 0.5s ease;
+}
+
+.backup-section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.backup-section-icon {
+    font-size: 32px;
+}
+
+.backup-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.backup-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.backup-action-btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.backup-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   PEDIGREE SPECIFIC FEATURES
+   ========================================== */
+
+.pedigree-tools {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.pedigree-tool-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pedigree-tool-btn:hover {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.05);
+    transform: translateY(-2px);
+}
+
+.pedigree-tool-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Coefficient of inbreeding highlight */
+.inbreeding-high {
+    background: rgba(255, 118, 117, 0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 700;
+    color: var(--danger);
+}
+
+.inbreeding-medium {
+    background: rgba(253, 203, 110, 0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 700;
+    color: var(--warning);
+}
+
+.inbreeding-low {
+    background: rgba(0, 184, 148, 0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+/* ==========================================
+   IMPROVED MOBILE CSS
+   ========================================== */
+
+@media (max-width: 767px) {
+    .drag-drop-zone {
+        padding: 25px 15px;
+    }
+
+    .drag-drop-icon {
+        font-size: 48px;
+    }
+
+    .drag-drop-text strong {
+        font-size: 16px;
+    }
+
+    .drag-drop-preview img {
+        max-width: 100%;
+        max-height: 200px;
+    }
+
+    .live-stats-indicator {
+        font-size: 12px;
+        padding: 6px 12px;
+        margin: 5px;
+    }
+
+    .stats-blink {
+        font-size: 14px;
+    }
+
+    .backup-drag-zone {
+        padding: 20px 15px;
+    }
+
+    .backup-drag-icon {
+        font-size: 36px;
+    }
+
+    .backup-section {
+        padding: 15px;
+    }
+
+    .backup-actions {
+        flex-direction: column;
+    }
+
+    .backup-action-btn {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .pedigree-tools {
+        flex-direction: column;
+    }
+
+    .pedigree-tool-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Better mobile forms */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    input.form-control,
+    select.form-control,
+    textarea.form-control {
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+
+    /* Mobile-optimized buttons */
+    .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+    }
+
+    /* Better mobile tables */
+    table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile navigation improvements */
+    .navbar-nav {
+        margin: 0;
+    }
+
+    .navbar-nav > li {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .navbar-nav > li > a {
+        padding: 15px 20px;
+    }
+
+    /* Mobile footer */
+    .site-footer {
+        padding: 40px 0 20px;
+    }
+
+    .footer-section {
+        margin-bottom: 25px;
+    }
+
+    /* Mobile hero banner */
+    .hero-banner {
+        padding: 40px 20px;
+    }
+
+    .hero-banner h1 {
+        font-size: 28px;
+    }
+
+    .hero-banner p {
+        font-size: 16px;
+    }
+}
+
+/* ==========================================
+   ENHANCED ANIMATIONS
+   ========================================== */
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+.btn,
+.card,
+.panel {
+    transition: all 0.3s ease;
+}
+
+/* ==========================================
+   PRINT IMPROVEMENTS
+   ========================================== */
+
+@media print {
+    .drag-drop-zone,
+    .backup-drag-zone,
+    .pawpeds-fetch-btn,
+    .live-stats-indicator,
+    .pedigree-tools,
+    .navbar,
+    footer,
+    .theme-toggle,
+    .quick-actions-menu,
+    button {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+    }
+
+    * {
+        color: black !important;
+        background: white !important;
+        box-shadow: none !important;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .drag-drop-zone,
+    .backup-drag-zone {
+        border-width: 4px;
+    }
+
+    button,
+    .btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus indicators for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}

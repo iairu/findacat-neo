@@ -30,6 +30,10 @@ img {
 @section('subtitle', trans('cat.profile'))
 
 @section('cat-content')
+    <!-- Stat Cards -->
+    @component('components.stat-cards', ['cat' => $cat])
+    @endcomponent
+
     <div class="row">
         <div class="col-md-4">
             @include('cats.partials.profile')
