@@ -1,0 +1,8 @@
+---
+import Portal from '../../components/portal/Portal.astro';
+import { portalPages } from '../../i18n/portal';
+
+export const getStaticPaths = () => portalPages.map((page) => ({ params: { page } }));
+const { page } = Astro.params;
+---
+<Portal page={page as (typeof portalPages)[number]} locale="sk" />

@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import Icon from '../components/Icon.astro';
 import SearchModal from '../components/SearchModal.astro';
+import { portalUi } from '../i18n/portal';
 import { getLocale, localePath, switchLocalePath, t } from '../i18n/ui';
 
 interface Props {
@@ -17,6 +18,8 @@ const pageTitle = title ? `${title} · ${tr('site.name')}` : `${tr('site.name')}
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const docsHome = localePath(locale, '/docs/').replace(/\/$/, '');
 const inDocs = path === docsHome || path.startsWith(docsHome + '/');
+const pt = portalUi[locale];
+const here = (p: string) => path === localePath(locale, p).replace(/\/$/, '');
 const other = locale === 'sk' ? 'en' : 'sk';
 ---
 <!doctype html>
@@ -50,6 +53,10 @@ const other = locale === 'sk' ? 'en' : 'sk';
         <nav class="site-nav" aria-label={tr('nav.primary')}>
           <a class="nav-link" href={localePath(locale, '/')} aria-current={path === localePath(locale, '/').replace(/\/$/, '') || path === '/' ? 'page' : undefined}>{tr('nav.home')}</a>
           <a class="nav-link" href={localePath(locale, '/docs/')} aria-current={inDocs ? 'page' : undefined}>{tr('nav.docs')}</a>
+          <a class="nav-link" href={localePath(locale, '/cats/')} aria-current={here('/cats') || here('/cat') ? 'page' : undefined}>{pt['nav.cats']}</a>
+          <a class="nav-link" href={localePath(locale, '/test-mating/')} aria-current={here('/test-mating') ? 'page' : undefined}>{pt['nav.mating']}</a>
+          <a class="nav-link" href={localePath(locale, '/birthdays/')} aria-current={here('/birthdays') ? 'page' : undefined}>{pt['nav.birthdays']}</a>
+          <a class="nav-link" id="account-link" href={localePath(locale, '/login/')} data-account={localePath(locale, '/account/')} data-label={pt['nav.account']}>{pt['nav.signin']}</a>
         </nav>
         <button type="button" class="search-btn" data-open-search aria-label={tr('search.button')}>
           <Icon name="search" /><span>{tr('search.button')}</span><kbd>Ctrl K</kbd>
@@ -73,6 +80,13 @@ const other = locale === 'sk' ? 'en' : 'sk';
     </footer>
 
     <script>
+      try {
+        const link = document.getElementById('account-link');
+        if (link && localStorage.getItem('fac-user')) {
+          link.setAttribute('href', link.dataset.account!);
+          link.textContent = link.dataset.label!;
+        }
+      } catch {}
       document.getElementById('theme-toggle')?.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;

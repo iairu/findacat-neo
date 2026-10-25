@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { portalUi, portalTitles, type PortalPage } from '../../i18n/portal';
+import type { Locale } from '../../i18n/ui';
+
+interface Props { page: PortalPage; locale: Locale }
+const { page, locale } = Astro.props;
+const dict = portalUi[locale];
+const title = dict[portalTitles[page]];
+---
+<BaseLayout title={title}>
+  <div class="container portal">
+    <h1 class="portal__title">{title}</h1>
+    <div id="app" data-page={page} data-locale={locale}>
+      <noscript><p>{dict['common.noscript']}</p></noscript>
+    </div>
+  </div>
+  <script type="application/json" id="i18n" set:html={JSON.stringify(dict)} />
+  <script>
+    import '../../lib/portal';
+  </script>
+</BaseLayout>

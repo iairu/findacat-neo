@@ -8,12 +8,15 @@ export default defineConfig({
   integrations: [mdx()],
   vite: {
     plugins: [tailwindcss()],
+    // `astro dev` proxies the API so cookies stay same-origin, as in production.
+    server: { proxy: { '/api': 'http://localhost:8000' } },
   },
   // Code blocks follow the site theme (see `.astro-code` in global.css).
   markdown: {
     shikiConfig: { themes: { light: 'github-light', dark: 'github-dark' }, defaultColor: false },
   },
   site: 'https://findacat.eu',
+  trailingSlash: 'ignore',
   // English lives at /, Slovak at /sk/.
   i18n: {
     locales: ['en', 'sk'],

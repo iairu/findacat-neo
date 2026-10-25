@@ -20,8 +20,8 @@ class Cat extends Model
     protected function casts(): array
     {
         return [
-            'born_on' => 'date',
-            'died_on' => 'date',
+            'born_on' => 'date:Y-m-d',
+            'died_on' => 'date:Y-m-d',
             'metadata' => 'array',
         ];
     }
