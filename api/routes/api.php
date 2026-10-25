@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminCatController;
 use App\Http\Controllers\Api\CatController;
 use App\Http\Controllers\Api\LookupController;
 use Illuminate\Http\Request;
@@ -36,7 +37,14 @@ Route::get('/cats/{cat}', [CatController::class, 'show']);
 Route::get('/cats/{cat}/pedigree', [CatController::class, 'pedigree']);
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::get('/my/cats', [CatController::class, 'mine']);
     Route::post('/cats', [CatController::class, 'store']);
     Route::put('/cats/{cat}', [CatController::class, 'update']);
     Route::delete('/cats/{cat}', [CatController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'verified', 'can:admin'])->prefix('admin')->group(function () {
+    Route::get('/cats', [AdminCatController::class, 'index']);
+    Route::post('/cats/{cat}/approve', [AdminCatController::class, 'approve']);
+    Route::post('/cats/{cat}/reject', [AdminCatController::class, 'reject']);
 });

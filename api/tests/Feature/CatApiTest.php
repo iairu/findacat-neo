@@ -112,7 +112,45 @@ class CatApiTest extends TestCase
 
         $user = $this->user();
         $this->actingAs($user, 'sanctum')->postJson('/api/cats', $payload)
-            ->assertCreated()->assertJsonPath('data.owner_id', $user->id);
+            ->assertCreated()->assertJsonPath('data.owner_id', $user->id)
+            ->assertJsonPath('data.moderation_status', 'pending');
+    }
+
+    public function test_admin_created_cats_are_approved_at_once(): void
+    {
+        $this->actingAs($this->user(['is_admin' => true]), 'sanctum')
+            ->postJson('/api/cats', ['name' => 'Staff pick', 'sex' => 'male'])
+            ->assertCreated()->assertJsonPath('data.moderation_status', 'approved');
+    }
+
+    public function test_moderation_queue_and_decisions_are_admin_only(): void
+    {
+        $owner = $this->user();
+        $cat = $this->cat('Waiting', Cat::MALE, ['moderation_status' => 'pending', 'owner_id' => $owner->id]);
+
+        $this->actingAs($owner, 'sanctum')->getJson('/api/admin/cats')->assertForbidden();
+        $this->actingAs($owner, 'sanctum')->postJson("/api/admin/cats/{$cat->id}/approve")->assertForbidden();
+        $this->getJson('/api/cats')->assertJsonCount(0, 'data');
+        $this->actingAs($owner, 'sanctum')->getJson('/api/my/cats')->assertJsonCount(1, 'data');
+
+        $admin = $this->user(['is_admin' => true]);
+        $this->actingAs($admin, 'sanctum')->getJson('/api/admin/cats')->assertOk()->assertJsonCount(1, 'data');
+        $this->postJson("/api/admin/cats/{$cat->id}/approve")->assertOk();
+        $this->getJson('/api/cats')->assertJsonCount(1, 'data');
+        $this->postJson("/api/admin/cats/{$cat->id}/reject")->assertOk();
+        $this->assertSame('rejected', $cat->fresh()->moderation_status);
+    }
+
+    public function test_a_pending_cat_cannot_be_used_as_a_parent_by_others(): void
+    {
+        $pending = $this->cat('Pending', Cat::MALE, ['moderation_status' => 'pending', 'owner_id' => $this->user()->id]);
+
+        $this->actingAs($this->user(), 'sanctum')
+            ->postJson('/api/cats', ['name' => 'Kit', 'sex' => 'male', 'sire_id' => $pending->id])
+            ->assertStatus(422)->assertJsonValidationErrors('sire_id');
+        $this->actingAs($pending->owner, 'sanctum')
+            ->postJson('/api/cats', ['name' => 'Kit', 'sex' => 'male', 'sire_id' => $pending->id])
+            ->assertCreated();
     }
 
     public function test_parents_must_have_the_right_sex_and_no_cycles(): void

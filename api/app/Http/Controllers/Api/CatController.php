@@ -66,6 +66,12 @@ class CatController extends Controller
         return $query->orderBy('name')->paginate($data['per_page'] ?? 24, self::LIST_COLUMNS);
     }
 
+    /** The signed-in user's own cats, whatever their moderation status. */
+    public function mine(Request $request): array
+    {
+        return ['data' => Cat::query()->where('owner_id', $request->user()->id)->orderBy('name')->get(self::LIST_COLUMNS + [13 => 'moderation_status'])];
+    }
+
     public function show(Request $request, string $id): array
     {
         $cat = $this->findVisible($request, $id);
@@ -92,9 +98,13 @@ class CatController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $this->validated($request);
-        $this->checkParents($data, null);
+        $this->checkParents($request, $data, null);
 
-        $cat = Cat::create($data + ['owner_id' => $request->user()->id]);
+        $user = $request->user();
+        $cat = Cat::create($data + [
+            'owner_id' => $user->id,
+            'moderation_status' => $user->is_admin ? 'approved' : 'pending',
+        ]);
 
         return response()->json(['data' => $cat->fresh()], 201);
     }
@@ -105,7 +115,7 @@ class CatController extends Controller
         abort_unless($this->canEdit($request, $cat), 403);
 
         $data = $this->validated($request, partial: true);
-        $this->checkParents($data + $cat->only(['sex', 'sire_id', 'dam_id']), $cat);
+        $this->checkParents($request, $data + $cat->only(['sex', 'sire_id', 'dam_id']), $cat);
         $cat->update($data);
 
         return ['data' => $cat->fresh()];
@@ -143,7 +153,7 @@ class CatController extends Controller
     }
 
     /** @param array<string, mixed> $data */
-    private function checkParents(array $data, ?Cat $cat): void
+    private function checkParents(Request $request, array $data, ?Cat $cat): void
     {
         foreach (['sire' => Cat::MALE, 'dam' => Cat::FEMALE] as $role => $sex) {
             $parentId = $data[$role.'_id'] ?? null;
@@ -151,6 +161,9 @@ class CatController extends Controller
                 continue;
             }
             $parent = Cat::findOrFail($parentId);
+            if ($parent->moderation_status !== 'approved' && ! $this->canEdit($request, $parent)) {
+                throw ValidationException::withMessages([$role.'_id' => 'This cat is not available as a parent.']);
+            }
             if ($parent->sex !== $sex) {
                 throw ValidationException::withMessages([$role.'_id' => "The {$role} must be a {$sex} cat."]);
             }
