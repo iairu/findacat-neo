@@ -15,8 +15,8 @@ class AdminUserController extends Controller
 
         return User::query()
             ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q
-                ->where('name', 'like', '%'.addcslashes($search, '%_\\').'%')
-                ->orWhere('email', 'like', '%'.addcslashes($search, '%_\\').'%')))
+                ->whereLike('name', '%'.addcslashes($search, '%_\\').'%')
+                ->orWhereLike('email', '%'.addcslashes($search, '%_\\').'%')))
             ->orderBy('name')
             ->paginate(50, ['id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at']);
     }

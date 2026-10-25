@@ -8,6 +8,7 @@ use App\Services\Inbreeding;
 use App\Services\Pedigree;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -33,14 +34,14 @@ class CatController extends Controller
             'sex' => ['nullable', Rule::in([Cat::MALE, Cat::FEMALE])],
             'breed_code' => 'nullable|string|max:20',
             'ems_code' => 'nullable|string|max:40',
-            'born' => 'nullable|string|max:10',
+            'born' => ['nullable', 'string', 'regex:/^\d{4}(-\d{2}(-\d{2})?)?$/'],
             'reg_number' => 'nullable|string|max:100',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
         $exact = (bool) ($data['exact'] ?? false);
         $match = fn ($query, string $column, string $value) => $exact
             ? $query->where($column, $value)
-            : $query->where($column, 'like', '%'.addcslashes($value, '%_\\').'%');
+            : $query->whereLike($column, '%'.addcslashes($value, '%_\\').'%');
 
         $query = Cat::query()->approved();
         if (! empty($data['q'])) {
@@ -56,7 +57,9 @@ class CatController extends Controller
             $match($query, 'ems_code', $data['ems_code']);
         }
         if (! empty($data['born'])) {
-            $query->where('born_on', 'like', addcslashes($data['born'], '%_\\').'%');
+            // A year, year-month or full date; ranges keep this working on PostgreSQL, where dates do not support LIKE.
+            [$from, $until] = self::bornRange($data['born']);
+            $query->where('born_on', '>=', $from)->where('born_on', '<', $until);
         }
         if (! empty($data['reg_number'])) {
             $query->where(fn ($q) => $match($q, 'reg_number', $data['reg_number'])
@@ -189,5 +192,23 @@ class CatController extends Controller
         $user = $request->user('sanctum');
 
         return $user !== null && ($user->is_admin || $cat->owner_id === $user->id);
+    }
+
+    /**
+     * The first day of a "YYYY", "YYYY-MM" or "YYYY-MM-DD" period and the day after it ends.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function bornRange(string $born): array
+    {
+        $parts = explode('-', $born);
+        $from = Carbon::create((int) $parts[0], (int) ($parts[1] ?? 1), (int) ($parts[2] ?? 1));
+        $until = match (count($parts)) {
+            1 => $from->copy()->addYear(),
+            2 => $from->copy()->addMonth(),
+            default => $from->copy()->addDay(),
+        };
+
+        return [$from->toDateString(), $until->toDateString()];
     }
 }

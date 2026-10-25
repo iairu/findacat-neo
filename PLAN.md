@@ -6,7 +6,7 @@ Rewrite of the old Laravel 8 app (a Silsilah fork, removed from the tree in phas
 
 - **Backend:** current Laravel, JSON API only, Sanctum SPA cookie auth on the same domain under `/api`.
 - **Frontend:** static Astro build (`web/`, renamed from `docs-astro/`): homepage, docs and portal. Portal pages are interactive islands calling the API.
-- **Hosting:** FTP/cPanel only. No SSH, Composer or Node on the server. Releases ship with `vendor/` included; migrations run through a token-protected installer route.
+- **Hosting:** FTP/cPanel only. No SSH, Composer or Node on the server. Releases ship with `vendor/` included; migrations run through a token-protected installer route. Vercel (Git import) is supported as a second target.
 - **Registration:** public accounts with email verification. Users register and edit their own cats. Admins moderate and manage breeds, EMS and backups.
 - **Palette:** warm amber/cream (cat-coat tones) with light and dark modes, replacing neon green on black.
 - **Carry over:** import of the findacat.eu database (keep UUIDs), EN + SK localization, PawPeds integration, backups and CSV import/export, inbreeding (COI) for test matings and pedigrees.
@@ -20,6 +20,7 @@ findacat-neo/
 ├─ api/          Laravel, JSON API only
 ├─ web/          Astro: homepage, docs, portal
 └─ scripts/      release builder for FTP deploys
+vercel.json, composer.json   Vercel build: static site + api/index.php as a PHP function
 ```
 
 ## Deployment (FTP/cPanel)
@@ -30,6 +31,15 @@ findacat-neo/
 - Laravel core and `vendor/` go outside `public_html` where the host allows it, otherwise in a folder locked by a deny-all `.htaccess`.
 - First-run migrations and the first admin are created by a one-time, token-protected `/api/install` page. Scheduled work uses cPanel cron; mail uses SMTP.
 - Pages keyed by ID (`/cats/?id=...`) are one static page that loads its data from the API.
+
+## Deployment (Vercel)
+
+Importing the repository into Vercel works without dashboard settings:
+
+- `vercel.json` builds `web/` to `web/dist` and runs `api/index.php` with the `vercel-php` runtime; `/api` and `/api/*` rewrite to it.
+- The runtime only looks for `composer.json` at the root, so the root `composer.json` has a `vercel` script that installs `api/` without dev packages.
+- `api/index.php` fills in Vercel defaults when a variable is unset: storage and bootstrap caches in `/tmp`, logs to stderr, database sessions and cache, trusted proxies, `APP_URL` from `VERCEL_*`, and `DB_URL` from a Marketplace `DATABASE_URL`/`POSTGRES_URL`.
+- The database is external (Neon Postgres or MySQL). Required variables: `APP_KEY`, `INSTALL_TOKEN` (for setup only), mail settings.
 
 ## Phases
 
@@ -60,4 +70,5 @@ findacat-neo/
 - PawPeds: `old_project` calls a `PawPedsService` that does not exist in the repo (only the controller and a JS button), so the old integration never worked. PawPeds' robots.txt disallows `/db/`, where the pedigree database lives, so an automated fetcher is on hold until PawPeds agrees to it.
 - Local PHP is not installed; run Composer and Artisan through the `composer:2` Docker image (see `api/README.md`).
 - Phase 7 done: docs (user guide, installing on shared hosting, running the site, API reference; EN and SK), `scripts/build-release` (static site + `findacat-app/` with production `vendor/`, `.htaccess` routing `/api` to Laravel, generated `APP_KEY` and `INSTALL_TOKEN`), and the token-protected `/api/install` route (migrations, first admin, re-run for upgrades). Checked end to end: the zip served by Apache on PHP 8.3 installs, signs in, adds and finds a cat. `old_project/` is removed except the demo CSVs, now in `api/database/demo/`; the thesis PDFs are only in git history. Dependencies are pinned to PHP 8.3 (`config.platform.php`) because the latest Symfony needs 8.4.
+- Vercel: `vercel.json`, root `composer.json` build hook, `api/index.php` entry. Searches use case-insensitive `whereLike` and the birth filter uses date ranges, so they work on PostgreSQL; the cats table adds its self-referencing keys after creation for the same reason; the install route skips sessions and throttles through the file store so it runs before the sessions and cache tables exist; Sanctum always treats the requested host as stateful (preview URLs). Checked: the suite passes on SQLite, PostgreSQL 17 and MySQL 8.4, and `vercel build` output, run on Amazon Linux 2023 against PostgreSQL, installs, signs in, adds and finds a cat.
 - Not done: PawPeds (see above), a committed browser test suite, comparing COI against the old `inbreeding.js` on real pedigrees.

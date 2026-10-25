@@ -10,14 +10,18 @@ use App\Http\Controllers\Api\CatController;
 use App\Http\Controllers\Api\InstallController;
 use App\Http\Controllers\Api\LookupController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 Route::get('/health', fn () => [
     'status' => 'ok',
     'app' => config('app.name'),
 ]);
 
-Route::get('/install', [InstallController::class, 'form']);
-Route::post('/install', [InstallController::class, 'run'])->middleware('throttle:10,1');
+// Runs before the sessions and cache tables exist, so it skips the session middleware and throttles itself.
+Route::withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->group(function () {
+    Route::get('/install', [InstallController::class, 'form']);
+    Route::post('/install', [InstallController::class, 'run']);
+});
 
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');

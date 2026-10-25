@@ -9,3 +9,5 @@
 *.tmp
 *.temp
 /release/
+/vendor/
+.vercel

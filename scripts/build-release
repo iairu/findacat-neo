@@ -25,7 +25,7 @@ echo "==> Copying the API"
 tar -C "$ROOT/api" \
   --exclude='./vendor' --exclude='./tests' --exclude='./node_modules' --exclude='./.env' \
   --exclude='./.claude' --exclude='./.mcp.json' --exclude='./boost.json' --exclude='./CLAUDE.md' \
-  --exclude='./storage/logs/*' --exclude='./storage/framework/*/*' --exclude='*.sqlite' --exclude='./database/demo' \
+  --exclude='./index.php' --exclude='./storage/logs/*' --exclude='./storage/framework/*/*' --exclude='*.sqlite' --exclude='./database/demo' \
   -cf - . | tar -C "$STAGE/findacat-app" -xf -
 mkdir -p "$STAGE/findacat-app/storage/logs" \
   "$STAGE/findacat-app/storage/framework/"{cache/data,sessions,views} \

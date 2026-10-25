@@ -1,0 +1,68 @@
+---
+title: Deploying on Vercel
+description: Import the repository into Vercel, add a database and the environment variables, and run the setup page.
+section: admin
+order: 1
+---
+The repository deploys to [Vercel](https://vercel.com) as it is. Vercel builds the static site from `web/` and runs the Laravel API as one PHP serverless function at `/api`, using the community [`vercel-php`](https://github.com/vercel-community/php) runtime. The settings live in `vercel.json` at the repository root, so you don't have to change any build settings in the Vercel dashboard.
+
+## What you need
+
+- A GitHub, GitLab or Bitbucket copy of the repository.
+- A database Vercel can reach: **PostgreSQL** (for example Neon from the Vercel Marketplace) or **MySQL/MariaDB** hosted elsewhere. Vercel has no database of its own, and the function's disk is wiped between requests.
+- SMTP details for confirmation and password-reset emails.
+
+## Import the repository
+
+1. In Vercel choose **Add New → Project** and import the repository.
+2. Leave the root directory at `./` and the framework preset at **Other**. `vercel.json` already sets the install command, the build command and the `web/dist` output.
+3. Don't deploy yet: open **Environment Variables** first (or let the first deployment fail and redeploy after the next step).
+
+## Add a database
+
+The simplest option is **Storage → Create Database → Neon** in the project. Connecting it adds `DATABASE_URL` / `POSTGRES_URL` to the project, and the API picks them up automatically.
+
+To use another database, set `DB_URL` yourself, for example `mysql://user:password@host:3306/findacat` or `postgres://user:password@host:5432/findacat?sslmode=require`.
+
+## Environment variables
+
+| Variable | Value |
+| --- | --- |
+| `APP_KEY` | Required. Generate one with `echo "base64:$(openssl rand -base64 32)"`. Keep it the same for every deployment. |
+| `INSTALL_TOKEN` | A long random string, for example from `openssl rand -hex 24`. Only needed while running the setup page. |
+| `APP_NAME` | `Find A Cat`, or the name to show in emails. |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your SMTP account, with `MAIL_MAILER=smtp`. Without them emails are only written to the function log. |
+| `APP_URL` | Only for a custom domain: `https://your-domain.example`. |
+| `DB_URL` | Only when the database was not added through the Marketplace. |
+
+Everything else has a Vercel default set in `api/index.php`: production mode, logs to the Vercel function log, sessions and cache in the database, secure cookies, trusted proxy headers, and a writable storage folder under `/tmp`. Any variable you set yourself takes precedence.
+
+Preview deployments use the same variables unless you scope them to the **Production** environment. To keep test data out of the real database, give **Preview** its own `DB_URL`.
+
+## Run the setup page
+
+After the first successful deployment open:
+
+```
+https://your-project.vercel.app/api/install?token=YOUR_INSTALL_TOKEN
+```
+
+Enter a name, email and password (12 characters or more) for the first administrator and press **Run setup**. This creates the tables, including the session and cache tables, and the administrator.
+
+Then **delete `INSTALL_TOKEN`** from the project's environment variables and redeploy. Without a token the setup page does not exist.
+
+## Upgrade
+
+Push to the production branch, and Vercel builds and deploys it. If the new version brings database changes, add `INSTALL_TOKEN` back, redeploy, open the setup page and press **Run setup** (it only applies new migrations once an administrator exists), then remove the token again.
+
+## Limits
+
+- **Uploads:** Vercel limits a request body to 4.5 MB. Split larger CSV backups, or import them from your own computer with `php artisan legacy:import --breeds=… --ems=… --cats=…` and `DB_URL` pointing at the same database.
+- **First request:** after a quiet period the function starts cold, which takes a second or two.
+- **Run time:** `vercel.json` allows 60 seconds per request, which is enough for pedigree and inbreeding calculations and for exports of a large database.
+
+## Troubleshooting
+
+- **The build fails in the PHP step:** open the build log. Composer runs from the root `composer.json`, whose `vercel` script installs `api/` without development packages.
+- **`/api/health` works but other pages return "Server Error":** look in **Logs** for the function. A message about a missing `cache` or `sessions` table means the setup page has not run yet. `No application encryption key` means `APP_KEY` is missing.
+- **Emails link to the `vercel.app` address instead of your domain:** set `APP_URL` to your domain and redeploy.

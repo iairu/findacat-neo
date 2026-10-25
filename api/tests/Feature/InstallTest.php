@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class InstallTest extends TestCase
@@ -11,6 +12,13 @@ class InstallTest extends TestCase
     use RefreshDatabase;
 
     private array $admin = ['name' => 'Root', 'email' => 'root@example.com', 'password' => 'a-long-passphrase-1'];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The installer throttles through the file store; keep attempts from leaking between runs.
+        config(['cache.stores.file' => ['driver' => 'array']]);
+    }
 
     public function test_routes_do_not_exist_without_a_token(): void
     {
@@ -50,5 +58,26 @@ class InstallTest extends TestCase
         $this->postJson('/api/install', ['token' => 'secret-token', 'password' => 'short'] + $this->admin)
             ->assertUnprocessable();
         $this->get('/api/install?token=secret-token')->assertOk()->assertSee('Run setup');
+    }
+
+    public function test_browser_setup_works_before_sessions_and_cache_tables_exist(): void
+    {
+        config(['app.install_token' => 'secret-token', 'session.driver' => 'database', 'cache.default' => 'database']);
+        Schema::drop('sessions');
+        Schema::drop('cache');
+
+        $this->withHeaders(['Referer' => 'http://localhost/'])
+            ->postJson('/api/install', ['token' => 'secret-token'] + $this->admin)
+            ->assertOk()->assertJsonPath('admin_created', true);
+    }
+
+    public function test_attempts_are_throttled(): void
+    {
+        config(['app.install_token' => 'secret-token']);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/install', ['token' => 'nope'])->assertForbidden();
+        }
+        $this->postJson('/api/install', ['token' => 'secret-token'] + $this->admin)->assertTooManyRequests();
     }
 }

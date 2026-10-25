@@ -33,6 +33,19 @@ class CatApiTest extends TestCase
         $this->getJson('/api/cats?ems_code=n')->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_search_by_birth_year_month_or_day(): void
+    {
+        $this->cat('New Year', Cat::MALE, ['born_on' => '2019-01-01']);
+        $this->cat('Midsummer', Cat::FEMALE, ['born_on' => '2019-06-21']);
+        $this->cat('Late', Cat::FEMALE, ['born_on' => '2019-12-31']);
+        $this->cat('Next', Cat::MALE, ['born_on' => '2020-01-01']);
+
+        $this->getJson('/api/cats?born=2019')->assertOk()->assertJsonCount(3, 'data');
+        $this->getJson('/api/cats?born=2019-12')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/cats?born=2019-06-21')->assertOk()->assertJsonPath('data.0.name', 'Midsummer');
+        $this->getJson('/api/cats?born=19')->assertUnprocessable();
+    }
+
     public function test_search_treats_wildcards_literally(): void
     {
         $this->cat('Plain', Cat::MALE);

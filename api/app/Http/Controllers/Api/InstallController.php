@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
@@ -50,6 +52,14 @@ class InstallController extends Controller
 
     public function run(Request $request): JsonResponse
     {
+        // The file store works before migrations; the default store may be the not yet created cache table.
+        $limiter = new RateLimiter(Cache::store('file'));
+        $key = 'install:'.$request->ip();
+        if ($limiter->tooManyAttempts($key, 10)) {
+            abort(429);
+        }
+        $limiter->hit($key, 60);
+
         $this->authorizeToken((string) $request->input('token'));
 
         $needsAdmin = $this->needsAdmin();

@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // The Astro site calls the API from the same domain with session cookies.
         $middleware->statefulApi();
+
+        // Behind a TLS-terminating proxy (Vercel, some hosts) set TRUSTED_PROXIES=* so https links and signed URLs stay valid.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

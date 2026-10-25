@@ -51,7 +51,10 @@ return new class extends Migration
             $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('moderation_status', 8)->default('approved')->index(); // approved | pending | rejected
             $table->timestamps();
+        });
 
+        // Added once the table exists: PostgreSQL needs the primary key in place before a self-reference.
+        Schema::table('cats', function (Blueprint $table) {
             $table->foreign('sire_id')->references('id')->on('cats')->nullOnDelete();
             $table->foreign('dam_id')->references('id')->on('cats')->nullOnDelete();
         });

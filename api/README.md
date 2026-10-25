@@ -22,4 +22,6 @@ Without a local PHP, run the same commands through the `composer:2` Docker image
 
 Releases for FTP/cPanel hosting are built with `../scripts/build-release` (static site, `vendor/` without dev packages, rewrite rules). Upload, fill in `.env` and run `/api/install?token=…`. The full walkthrough is in the docs: *Installing on shared hosting*.
 
+On Vercel, `index.php` in this folder is the function entry (see `../vercel.json`); it sets read-only-filesystem defaults before booting Laravel. Walkthrough: *Deploying on Vercel*.
+
 `composer.json` pins `config.platform.php` to 8.3 so the lock file also works on PHP 8.3 hosts. Keep it that way when running `composer update`.

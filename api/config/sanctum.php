@@ -21,12 +21,12 @@ return [
     // Keep the CSRF cookie route under /api so one host rule covers the whole API.
     'prefix' => 'api/sanctum',
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
+    // The site and API always share a host, so the requested host is stateful too; this covers Vercel preview URLs.
+    'stateful' => [...explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    ))), Sanctum::$currentRequestHostPlaceholder],
 
     /*
     |--------------------------------------------------------------------------

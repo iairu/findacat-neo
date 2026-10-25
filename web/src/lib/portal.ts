@@ -145,7 +145,7 @@ async function catsPage() {
       ${input('q', t('cats.name'), { value: params.get('q') })}
       ${select('sex', t('cat.fields.sex'), sexOptions, params.get('sex') ?? '')}
       ${input('ems_code', t('cat.fields.ems'), { value: params.get('ems_code') })}
-      ${input('born', t('cats.born'), { value: params.get('born') })}
+      ${input('born', t('cats.born'), { value: params.get('born'), hint: 'YYYY, YYYY-MM, YYYY-MM-DD' })}
       ${input('reg_number', t('cats.reg'), { value: params.get('reg_number') })}
       <div class="field field--check"><label><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label></div>
       <div class="field field--actions"><button class="btn btn--primary" type="submit">${esc(t('common.search'))}</button></div>

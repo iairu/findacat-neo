@@ -1,0 +1,68 @@
+---
+title: Nasadenie na Vercel
+description: Import repozitára do Vercelu, pridanie databázy a premenných prostredia a spustenie inštalačnej stránky.
+section: admin
+order: 1
+---
+Repozitár sa dá nasadiť na [Vercel](https://vercel.com) bez úprav. Vercel zostaví statický web z `web/` a API v Laraveli spúšťa ako jednu PHP serverless funkciu na `/api` pomocou komunitného prostredia [`vercel-php`](https://github.com/vercel-community/php). Nastavenia sú v súbore `vercel.json` v koreni repozitára, takže v administrácii Vercelu netreba meniť nastavenia zostavenia.
+
+## Čo potrebujete
+
+- Kópiu repozitára na GitHube, GitLabe alebo Bitbuckete.
+- Databázu dostupnú z Vercelu: **PostgreSQL** (napríklad Neon z Vercel Marketplace) alebo **MySQL/MariaDB** u iného poskytovateľa. Vercel vlastnú databázu nemá a disk funkcie sa medzi požiadavkami maže.
+- Údaje SMTP na odosielanie potvrdzovacích e-mailov a e-mailov na obnovu hesla.
+
+## Import repozitára
+
+1. Vo Verceli zvoľte **Add New → Project** a importujte repozitár.
+2. Koreňový priečinok nechajte `./` a predvoľbu frameworku **Other**. Inštalačný príkaz, príkaz zostavenia aj výstup `web/dist` už nastavuje `vercel.json`.
+3. Ešte nenasadzujte: najprv otvorte **Environment Variables** (alebo nechajte prvé nasadenie zlyhať a po ďalšom kroku nasaďte znova).
+
+## Pridanie databázy
+
+Najjednoduchšie je v projekte zvoliť **Storage → Create Database → Neon**. Po pripojení pribudnú v projekte premenné `DATABASE_URL` / `POSTGRES_URL` a API ich použije automaticky.
+
+Inú databázu nastavíte premennou `DB_URL`, napríklad `mysql://pouzivatel:heslo@server:3306/findacat` alebo `postgres://pouzivatel:heslo@server:5432/findacat?sslmode=require`.
+
+## Premenné prostredia
+
+| Premenná | Hodnota |
+| --- | --- |
+| `APP_KEY` | Povinná. Vygenerujte ju príkazom `echo "base64:$(openssl rand -base64 32)"`. Pre všetky nasadenia musí zostať rovnaká. |
+| `INSTALL_TOKEN` | Dlhý náhodný reťazec, napríklad z `openssl rand -hex 24`. Potrebný len počas spúšťania inštalačnej stránky. |
+| `APP_NAME` | `Find A Cat` alebo názov, ktorý sa má zobrazovať v e-mailoch. |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Váš účet SMTP, s `MAIL_MAILER=smtp`. Bez nich sa e-maily len zapisujú do logu funkcie. |
+| `APP_URL` | Len pre vlastnú doménu: `https://vasa-domena.example`. |
+| `DB_URL` | Len ak databáza nebola pridaná cez Marketplace. |
+
+Ostatné nastavenia majú predvolené hodnoty pre Vercel v `api/index.php`: produkčný režim, logy do logu funkcie vo Verceli, relácie a cache v databáze, zabezpečené cookies, dôveryhodné hlavičky proxy a zapisovateľný priečinok úložiska v `/tmp`. Premenná, ktorú nastavíte sami, má prednosť.
+
+Náhľadové nasadenia (Preview) používajú rovnaké premenné, ak ich neobmedzíte na prostredie **Production**. Aby sa testovacie údaje nedostali do ostrej databázy, nastavte pre **Preview** vlastné `DB_URL`.
+
+## Spustenie inštalačnej stránky
+
+Po prvom úspešnom nasadení otvorte:
+
+```
+https://vas-projekt.vercel.app/api/install?token=VAS_INSTALL_TOKEN
+```
+
+Zadajte meno, e-mail a heslo (aspoň 12 znakov) prvého administrátora a stlačte **Run setup**. Vytvoria sa tabuľky vrátane tabuliek relácií a cache a tiež administrátor.
+
+Potom **odstráňte `INSTALL_TOKEN`** z premenných prostredia projektu a nasaďte znova. Bez tokenu inštalačná stránka neexistuje.
+
+## Aktualizácia
+
+Odošlite zmeny do produkčnej vetvy a Vercel ich zostaví a nasadí. Ak nová verzia mení databázu, pridajte späť `INSTALL_TOKEN`, nasaďte znova, otvorte inštalačnú stránku a stlačte **Run setup** (keď už administrátor existuje, len doplní nové migrácie). Potom token znova odstráňte.
+
+## Obmedzenia
+
+- **Nahrávanie:** Vercel obmedzuje telo požiadavky na 4,5 MB. Väčšie zálohy CSV rozdeľte alebo ich importujte zo svojho počítača príkazom `php artisan legacy:import --breeds=… --ems=… --cats=…` s `DB_URL` nastaveným na tú istú databázu.
+- **Prvá požiadavka:** po dlhšej nečinnosti sa funkcia spúšťa nanovo, čo trvá sekundu či dve.
+- **Čas behu:** `vercel.json` povoľuje 60 sekúnd na požiadavku, čo stačí na výpočty rodokmeňov a inbreedingu aj na export veľkej databázy.
+
+## Riešenie problémov
+
+- **Zostavenie zlyhá v kroku PHP:** pozrite si log zostavenia. Composer sa spúšťa z koreňového `composer.json`, ktorého skript `vercel` nainštaluje `api/` bez vývojových balíčkov.
+- **`/api/health` funguje, ostatné požiadavky vracajú „Server Error“:** pozrite si **Logs** funkcie. Hlásenie o chýbajúcej tabuľke `cache` alebo `sessions` znamená, že inštalačná stránka ešte nebežala. `No application encryption key` znamená, že chýba `APP_KEY`.
+- **E-maily odkazujú na adresu `vercel.app` namiesto vašej domény:** nastavte `APP_URL` na svoju doménu a nasaďte znova.

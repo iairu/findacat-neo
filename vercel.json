@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --prefix web",
+  "buildCommand": "npm run build --prefix web",
+  "outputDirectory": "web/dist",
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.9.0",
+      "maxDuration": 60,
+      "excludeFiles": "{.git/**,.vercel/**,web/**,release/**,scripts/**,PLAN.md,vercel.json,.vercelignore,node_modules/**,vendor/**,api/tests/**,api/node_modules/**,api/database/demo/**,api/storage/**,api/.claude/**,api/*.md,api/*.sqlite,api/database/*.sqlite}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api(/.*)?", "destination": "/api/index.php" }
+  ]
+}
