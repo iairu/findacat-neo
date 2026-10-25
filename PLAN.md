@@ -34,12 +34,13 @@ vercel.json, composer.json   Vercel build: static site + api/index.php as a PHP 
 
 ## Deployment (Vercel)
 
-Importing the repository into Vercel works without dashboard settings:
+The Deploy button in `README.md` clones the repository and provisions Neon Postgres; a plain Git import works too, with Neon added under Storage. No dashboard settings or variables are required:
 
 - `vercel.json` builds `web/` to `web/dist` and runs `api/index.php` with the `vercel-php` runtime; `/api` and `/api/*` rewrite to it.
 - The runtime only looks for `composer.json` at the root, so the root `composer.json` has a `vercel` script that installs `api/` without dev packages.
-- `api/index.php` fills in Vercel defaults when a variable is unset: storage and bootstrap caches in `/tmp`, logs to stderr, database sessions and cache, trusted proxies, `APP_URL` from `VERCEL_*`, and `DB_URL` from a Marketplace `DATABASE_URL`/`POSTGRES_URL`.
-- The database is external (Neon Postgres or MySQL). Required variables: `APP_KEY`, `INSTALL_TOKEN` (for setup only), mail settings.
+- `api/bootstrap/vercel.php` (loaded by `api/index.php`, and by `bootstrap/app.php` when `VERCEL` is set) fills in Vercel defaults when a variable is unset: storage and bootstrap caches in `/tmp`, logs to stderr, database sessions and cache, trusted proxies, `APP_URL` from `VERCEL_*`, and `DB_URL` from a Marketplace `DATABASE_URL`/`POSTGRES_URL`.
+- The root `composer.json` build hook then runs `artisan vercel:build`: migrations, plus `APP_KEY` and a setup token generated once into the `app_secrets` table and written to `bootstrap/cache/vercel-secrets.php` in the bundle. While no admin exists the build log prints the setup link; the generated token only works until an admin exists (`INSTALL_FIRST_RUN_ONLY`).
+- The database is external (Neon Postgres or MySQL). Only mail settings need to be set by hand; `.env.example` at the root lists the variables.
 
 ## Phases
 

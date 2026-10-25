@@ -1,60 +1,74 @@
 ---
 title: Nasadenie na Vercel
-description: Import repozitára do Vercelu, pridanie databázy a premenných prostredia a spustenie inštalačnej stránky.
+description: Nasadenie jedným kliknutím vrátane databázy Neon a vygenerovaných kľúčov a vytvorenie prvého administrátora z logu zostavenia.
 section: admin
 order: 1
 ---
 Repozitár sa dá nasadiť na [Vercel](https://vercel.com) bez úprav. Vercel zostaví statický web z `web/` a API v Laraveli spúšťa ako jednu PHP serverless funkciu na `/api` pomocou komunitného prostredia [`vercel-php`](https://github.com/vercel-community/php). Nastavenia sú v súbore `vercel.json` v koreni repozitára, takže v administrácii Vercelu netreba meniť nastavenia zostavenia.
 
-## Čo potrebujete
+## Nasadenie jedným kliknutím
 
-- Kópiu repozitára na GitHube, GitLabe alebo Bitbuckete.
-- Databázu dostupnú z Vercelu: **PostgreSQL** (napríklad Neon z Vercel Marketplace) alebo **MySQL/MariaDB** u iného poskytovateľa. Vercel vlastnú databázu nemá a disk funkcie sa medzi požiadavkami maže.
-- Údaje SMTP na odosielanie potvrdzovacích e-mailov a e-mailov na obnovu hesla.
+Použite [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (rovnaké tlačidlo je v súbore `README.md` repozitára). Tlačidlo:
 
-## Import repozitára
+1. skopíruje repozitár do vášho účtu na GitHube, GitLabe alebo Bitbuckete,
+2. vytvorí pre projekt databázu **Neon Postgres** (keď sa zobrazia, potvrďte podmienky Neonu a bezplatný plán),
+3. zostaví a nasadí projekt.
 
-1. Vo Verceli zvoľte **Add New → Project** a importujte repozitár.
-2. Koreňový priečinok nechajte `./` a predvoľbu frameworku **Other**. Inštalačný príkaz, príkaz zostavenia aj výstup `web/dist` už nastavuje `vercel.json`.
-3. Ešte nenasadzujte: najprv otvorte **Environment Variables** (alebo nechajte prvé nasadenie zlyhať a po ďalšom kroku nasaďte znova).
+Pri prvom nasadení netreba nastavovať žiadne premenné prostredia. Zostavenie samo spustí migrácie databázy a vygeneruje šifrovací kľúč (`APP_KEY`) aj inštalačný token. Pokračujte časťou [Vytvorenie prvého administrátora](#vytvorenie-prvého-administrátora).
 
-## Pridanie databázy
+## Import existujúceho repozitára
 
-Najjednoduchšie je v projekte zvoliť **Storage → Create Database → Neon**. Po pripojení pribudnú v projekte premenné `DATABASE_URL` / `POSTGRES_URL` a API ich použije automaticky.
+Ak repozitár importujete cez **Add New → Project**, databázu za vás Vercel nepridá:
+
+1. Koreňový priečinok nechajte `./`, predvoľbu frameworku **Other** a nasaďte.
+2. V projekte otvorte **Storage → Create Database → Neon** a pripojte databázu ku všetkým prostrediam. Pribudnú premenné `DATABASE_URL` / `POSTGRES_URL` a API ich použije automaticky.
+3. Otvorte **Deployments** a posledné nasadenie spustite znova cez **Redeploy**, aby sa zostavenie dostalo k databáze.
 
 Inú databázu nastavíte premennou `DB_URL`, napríklad `mysql://pouzivatel:heslo@server:3306/findacat` alebo `postgres://pouzivatel:heslo@server:5432/findacat?sslmode=require`.
 
+## Čo robí zostavenie
+
+Koreňový `composer.json` nainštaluje API a potom spustí `php artisan vercel:build`, ktorý:
+
+- spustí migrácie, takže každé nasadenie aktualizuje databázu;
+- pri prvom zostavení vytvorí `APP_KEY` a inštalačný token a uloží ich do tabuľky `app_secrets`, takže všetky ďalšie nasadenia vrátane náhľadov na vetve Neonu použijú rovnaké hodnoty;
+- kým neexistuje administrátor, vypíše do logu zostavenia odkaz na inštalačnú stránku.
+
+Ak sa zostavenie k databáze nedostane, napíše to do logu a web sa nasadí s nefunkčným API. Pripojte databázu a nasaďte znova.
+
+## Vytvorenie prvého administrátora
+
+Otvorte **Deployments**, vyberte nasadenie a rozbaľte **Build Logs**. Na konci kroku PHP je riadok podobný tomuto:
+
+```
+Create the first administrator at https://vas-projekt.vercel.app/api/install?token=…
+```
+
+Otvorte odkaz, zadajte meno, e-mail a heslo (aspoň 12 znakov) a stlačte **Run setup**. Inštalačná stránka prestane fungovať hneď, ako administrátor existuje, takže potom netreba nič upratovať. Logy zostavenia vidia len členovia projektu vo Verceli.
+
 ## Premenné prostredia
+
+Žiadna nie je povinná. Zoznam je v súbore `.env.example` v koreni repozitára; stránka **Environment Variables** ho prijme vložený celý naraz.
 
 | Premenná | Hodnota |
 | --- | --- |
-| `APP_KEY` | Povinná. Vygenerujte ju príkazom `echo "base64:$(openssl rand -base64 32)"`. Pre všetky nasadenia musí zostať rovnaká. |
-| `INSTALL_TOKEN` | Dlhý náhodný reťazec, napríklad z `openssl rand -hex 24`. Potrebný len počas spúšťania inštalačnej stránky. |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Váš účet SMTP, s `MAIL_MAILER=smtp`. Bez nich sa potvrdzovacie e-maily a e-maily na obnovu hesla len zapisujú do logu funkcie. |
 | `APP_NAME` | `Find A Cat` alebo názov, ktorý sa má zobrazovať v e-mailoch. |
-| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Váš účet SMTP, s `MAIL_MAILER=smtp`. Bez nich sa e-maily len zapisujú do logu funkcie. |
-| `DISABLE_SIGNUPS` | `true` alebo `1` vypne registráciu: stránka registrácie namiesto formulára zobrazí oznam. Existujúce účty fungujú ďalej. |
 | `APP_URL` | Len pre vlastnú doménu: `https://vasa-domena.example`. |
+| `DISABLE_SIGNUPS` | `true` alebo `1` vypne registráciu: stránka registrácie namiesto formulára zobrazí oznam. Existujúce účty fungujú ďalej. |
 | `DB_URL` | Len ak databáza nebola pridaná cez Marketplace. |
+| `APP_KEY` | Generuje sa. Nastavte ho, len ak chcete zachovať kľúč staršej inštalácie, napríklad `echo "base64:$(openssl rand -base64 32)"`. |
+| `INSTALL_TOKEN` | Generuje sa. Ak nastavíte vlastný, inštalačná stránka spúšťa čakajúce migrácie aj po vytvorení administrátora; po skončení ho odstráňte. |
 
-Ostatné nastavenia majú predvolené hodnoty pre Vercel v `api/index.php`: produkčný režim, logy do logu funkcie vo Verceli, relácie a cache v databáze, zabezpečené cookies, dôveryhodné hlavičky proxy a zapisovateľný priečinok úložiska v `/tmp`. Premenná, ktorú nastavíte sami, má prednosť.
+Ostatné nastavenia majú predvolené hodnoty pre Vercel v `api/bootstrap/vercel.php`: produkčný režim, logy do logu funkcie vo Verceli, relácie a cache v databáze, zabezpečené cookies, dôveryhodné hlavičky proxy a zapisovateľný priečinok úložiska v `/tmp`. Premenná, ktorú nastavíte sami, má prednosť. Zmeny premenných platia pre nasadenia zostavené po zmene, preto po úprave nasaďte znova.
 
-Náhľadové nasadenia (Preview) používajú rovnaké premenné, ak ich neobmedzíte na prostredie **Production**. Aby sa testovacie údaje nedostali do ostrej databázy, nastavte pre **Preview** vlastné `DB_URL`.
+## Náhľadové nasadenia
 
-## Spustenie inštalačnej stránky
-
-Po prvom úspešnom nasadení otvorte:
-
-```
-https://vas-projekt.vercel.app/api/install?token=VAS_INSTALL_TOKEN
-```
-
-Zadajte meno, e-mail a heslo (aspoň 12 znakov) prvého administrátora a stlačte **Run setup**. Vytvoria sa tabuľky vrátane tabuliek relácií a cache a tiež administrátor.
-
-Potom **odstráňte `INSTALL_TOKEN`** z premenných prostredia projektu a nasaďte znova. Bez tokenu inštalačná stránka neexistuje.
+Ak je v nastaveniach integrácie Neon zapnuté vetvenie pre náhľady, každé náhľadové nasadenie dostane vlastnú vetvu databázy skopírovanú z hlavnej databázy, takže jeho migrácie a testovacie údaje sa do produkcie nedostanú. Inak, alebo pri inej databáze, nastavte pre **Preview** vlastné `DB_URL`: náhľadové zostavenia by migrovali produkčnú databázu.
 
 ## Aktualizácia
 
-Odošlite zmeny do produkčnej vetvy a Vercel ich zostaví a nasadí. Ak nová verzia mení databázu, pridajte späť `INSTALL_TOKEN`, nasaďte znova, otvorte inštalačnú stránku a stlačte **Run setup** (keď už administrátor existuje, len doplní nové migrácie). Potom token znova odstráňte.
+Odošlite zmeny do produkčnej vetvy. Vercel ich zostaví a nasadí a zostavenie doplní nové migrácie.
 
 ## Obmedzenia
 
@@ -64,6 +78,8 @@ Odošlite zmeny do produkčnej vetvy a Vercel ich zostaví a nasadí. Ak nová v
 
 ## Riešenie problémov
 
-- **Zostavenie zlyhá v kroku PHP:** pozrite si log zostavenia. Composer sa spúšťa z koreňového `composer.json`, ktorého skript `vercel` nainštaluje `api/` bez vývojových balíčkov.
-- **`/api/health` funguje, ostatné požiadavky vracajú „Server Error“:** pozrite si **Logs** funkcie. Hlásenie o chýbajúcej tabuľke `cache` alebo `sessions` znamená, že inštalačná stránka ešte nebežala. `No application encryption key` znamená, že chýba `APP_KEY`.
+- **Log zostavenia hlási „No database reachable“:** pripojte databázu podľa návodu vyššie a nasaďte znova.
+- **Zostavenie zlyhá v kroku PHP:** pozrite si log zostavenia. Chyba migrácie zastaví nasadenie, aby sa nikdy nespustila napoly migrovaná databáza.
+- **`/api/health` funguje, ostatné požiadavky vracajú „Server Error“:** pozrite si **Logs** funkcie. Chýbajúca tabuľka `cache` alebo `sessions` či hlásenie `No application encryption key` znamenajú, že zostavenie prebehlo bez databázy; nasaďte znova.
+- **Všetci boli odhlásení:** kľúč je v tabuľke `app_secrets`, takže nová alebo vymazaná databáza dostane nový kľúč. Ak ho chcete zachovať naprieč databázami, nastavte `APP_KEY`.
 - **E-maily odkazujú na adresu `vercel.app` namiesto vašej domény:** nastavte `APP_URL` na svoju doménu a nasaďte znova.

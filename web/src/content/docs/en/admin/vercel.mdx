@@ -1,60 +1,74 @@
 ---
 title: Deploying on Vercel
-description: Import the repository into Vercel, add a database and the environment variables, and run the setup page.
+description: Deploy with one click, including a Neon database and generated secrets, then create the first administrator from the build log.
 section: admin
 order: 1
 ---
 The repository deploys to [Vercel](https://vercel.com) as it is. Vercel builds the static site from `web/` and runs the Laravel API as one PHP serverless function at `/api`, using the community [`vercel-php`](https://github.com/vercel-community/php) runtime. The settings live in `vercel.json` at the repository root, so you don't have to change any build settings in the Vercel dashboard.
 
-## What you need
+## Deploy with one click
 
-- A GitHub, GitLab or Bitbucket copy of the repository.
-- A database Vercel can reach: **PostgreSQL** (for example Neon from the Vercel Marketplace) or **MySQL/MariaDB** hosted elsewhere. Vercel has no database of its own, and the function's disk is wiped between requests.
-- SMTP details for confirmation and password-reset emails.
+Use [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiairu%2Ffindacat-neo&project-name=findacat&repository-name=findacat&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) (the same button is in the repository's `README.md`). It:
 
-## Import the repository
+1. copies the repository to your GitHub, GitLab or Bitbucket account,
+2. creates a **Neon Postgres** database for the project (confirm the Neon terms and the free plan when asked),
+3. builds and deploys.
 
-1. In Vercel choose **Add New → Project** and import the repository.
-2. Leave the root directory at `./` and the framework preset at **Other**. `vercel.json` already sets the install command, the build command and the `web/dist` output.
-3. Don't deploy yet: open **Environment Variables** first (or let the first deployment fail and redeploy after the next step).
+No environment variables are needed for the first deployment. The build runs the database migrations and generates the encryption key (`APP_KEY`) and a setup token itself. Continue with [Create the first administrator](#create-the-first-administrator).
 
-## Add a database
+## Import an existing repository
 
-The simplest option is **Storage → Create Database → Neon** in the project. Connecting it adds `DATABASE_URL` / `POSTGRES_URL` to the project, and the API picks them up automatically.
+If you import the repository through **Add New → Project** instead, Vercel cannot add the database for you:
+
+1. Leave the root directory at `./` and the framework preset at **Other**, and deploy.
+2. In the project open **Storage → Create Database → Neon** and connect it to all environments. This adds `DATABASE_URL` / `POSTGRES_URL`, which the API picks up automatically.
+3. Open **Deployments**, and **Redeploy** the latest deployment so the build can reach the database.
 
 To use another database, set `DB_URL` yourself, for example `mysql://user:password@host:3306/findacat` or `postgres://user:password@host:5432/findacat?sslmode=require`.
 
+## What the build does
+
+The root `composer.json` installs the API and then runs `php artisan vercel:build`, which:
+
+- runs the database migrations, so every deployment brings the database up to date;
+- creates `APP_KEY` and a setup token on the first build and keeps them in the `app_secrets` table, so every later deployment, including previews on a Neon branch, uses the same values;
+- prints the setup link in the build log while no administrator exists.
+
+If the build cannot reach a database, it says so in the log and the site deploys without a working API. Connect a database and redeploy.
+
+## Create the first administrator
+
+Open **Deployments**, select the deployment and expand **Build Logs**. Near the end of the PHP step there is a line like:
+
+```
+Create the first administrator at https://your-project.vercel.app/api/install?token=…
+```
+
+Open that link, enter a name, email and password (12 characters or more) and press **Run setup**. The setup page stops working as soon as an administrator exists, so there is nothing to clean up afterwards. Build logs are only visible to members of the Vercel project.
+
 ## Environment variables
+
+None are required. `.env.example` at the repository root lists them; the **Environment Variables** page accepts it pasted in as a whole.
 
 | Variable | Value |
 | --- | --- |
-| `APP_KEY` | Required. Generate one with `echo "base64:$(openssl rand -base64 32)"`. Keep it the same for every deployment. |
-| `INSTALL_TOKEN` | A long random string, for example from `openssl rand -hex 24`. Only needed while running the setup page. |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your SMTP account, with `MAIL_MAILER=smtp`. Without them, confirmation and password-reset emails are only written to the function log. |
 | `APP_NAME` | `Find A Cat`, or the name to show in emails. |
-| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your SMTP account, with `MAIL_MAILER=smtp`. Without them emails are only written to the function log. |
-| `DISABLE_SIGNUPS` | `true` or `1` closes registration: the sign-up page shows a notice instead of the form. Existing accounts keep working. |
 | `APP_URL` | Only for a custom domain: `https://your-domain.example`. |
+| `DISABLE_SIGNUPS` | `true` or `1` closes registration: the sign-up page shows a notice instead of the form. Existing accounts keep working. |
 | `DB_URL` | Only when the database was not added through the Marketplace. |
+| `APP_KEY` | Generated. Set it only to keep the key of an earlier installation, for example `echo "base64:$(openssl rand -base64 32)"`. |
+| `INSTALL_TOKEN` | Generated. If you set your own, the setup page also runs pending migrations after an administrator exists; remove it when you are done. |
 
-Everything else has a Vercel default set in `api/index.php`: production mode, logs to the Vercel function log, sessions and cache in the database, secure cookies, trusted proxy headers, and a writable storage folder under `/tmp`. Any variable you set yourself takes precedence.
+Everything else has a Vercel default in `api/bootstrap/vercel.php`: production mode, logs to the Vercel function log, sessions and cache in the database, secure cookies, trusted proxy headers, and a writable storage folder under `/tmp`. Any variable you set yourself takes precedence. Variables apply to deployments built after you change them, so redeploy after editing.
 
-Preview deployments use the same variables unless you scope them to the **Production** environment. To keep test data out of the real database, give **Preview** its own `DB_URL`.
+## Preview deployments
 
-## Run the setup page
-
-After the first successful deployment open:
-
-```
-https://your-project.vercel.app/api/install?token=YOUR_INSTALL_TOKEN
-```
-
-Enter a name, email and password (12 characters or more) for the first administrator and press **Run setup**. This creates the tables, including the session and cache tables, and the administrator.
-
-Then **delete `INSTALL_TOKEN`** from the project's environment variables and redeploy. Without a token the setup page does not exist.
+With preview branching turned on in the Neon integration settings, each preview deployment gets its own database branch copied from the main database, so its migrations and test data stay out of production. Otherwise, or with another database, give **Preview** its own `DB_URL`: preview builds would migrate the production database.
 
 ## Upgrade
 
-Push to the production branch, and Vercel builds and deploys it. If the new version brings database changes, add `INSTALL_TOKEN` back, redeploy, open the setup page and press **Run setup** (it only applies new migrations once an administrator exists), then remove the token again.
+Push to the production branch. Vercel builds and deploys it, and the build applies any new migrations.
 
 ## Limits
 
@@ -64,6 +78,8 @@ Push to the production branch, and Vercel builds and deploys it. If the new vers
 
 ## Troubleshooting
 
-- **The build fails in the PHP step:** open the build log. Composer runs from the root `composer.json`, whose `vercel` script installs `api/` without development packages.
-- **`/api/health` works but other pages return "Server Error":** look in **Logs** for the function. A message about a missing `cache` or `sessions` table means the setup page has not run yet. `No application encryption key` means `APP_KEY` is missing.
+- **The build log says "No database reachable":** connect a database as described above and redeploy.
+- **The build fails in the PHP step:** open the build log. A migration error stops the deployment so that a half-migrated database never goes live.
+- **`/api/health` works but other pages return "Server Error":** look in **Logs** for the function. A missing `cache` or `sessions` table or `No application encryption key` means the build ran without a database; redeploy.
+- **Everyone was signed out:** the key lives in the `app_secrets` table, so a new or reset database gets a new key. Set `APP_KEY` to keep one across databases.
 - **Emails link to the `vercel.app` address instead of your domain:** set `APP_URL` to your domain and redeploy.

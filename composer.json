@@ -1,9 +1,12 @@
 {
     "name": "iairu/findacat-vercel",
-    "description": "Build hook for Vercel: the PHP runtime looks for composer.json at the repository root, so this installs the API's dependencies in api/.",
+    "description": "Build hook for Vercel: the PHP runtime looks for composer.json at the repository root, so this installs the API's dependencies in api/, then migrates the database and prepares generated secrets.",
     "type": "project",
     "require": {},
     "scripts": {
-        "vercel": "@composer install --working-dir=api --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-scripts"
+        "vercel": [
+            "@composer install --working-dir=api --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-scripts",
+            "@php api/artisan vercel:build --no-interaction"
+        ]
     }
 }

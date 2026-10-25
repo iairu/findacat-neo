@@ -17,6 +17,7 @@ use Illuminate\Validation\Rules\Password;
 /**
  * One-time setup for hosts without SSH: runs migrations and creates the first administrator.
  * Guarded by the INSTALL_TOKEN from `.env`; with no token configured the routes do not exist.
+ * On Vercel the build generates the token and runs migrations, so the route only serves the first run.
  * Posting only the token again later runs new migrations after an upgrade.
  */
 class InstallController extends Controller
@@ -26,6 +27,7 @@ class InstallController extends Controller
         $this->authorizeToken((string) $request->query('token'));
         $needsAdmin = $this->needsAdmin();
         $token = e((string) $request->query('token'));
+        $done = config('app.install_first_run_only') ? 'Done. This setup page is now closed.' : 'Done. Remove INSTALL_TOKEN from .env now.';
 
         $fields = $needsAdmin
             ? '<label>Name <input name="name" required></label><label>Email <input name="email" type="email" required></label>'
@@ -44,7 +46,7 @@ class InstallController extends Controller
               e.preventDefault();
               const r = await fetch('/api/install', {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json'}, body: JSON.stringify(Object.fromEntries(new FormData(f)))});
               const d = await r.json().catch(() => ({}));
-              out.textContent = r.ok ? 'Done. Remove INSTALL_TOKEN from .env now.\\n' + d.migrations : (d.message || 'Failed') + '\\n' + JSON.stringify(d.errors || {}, null, 2);
+              out.textContent = r.ok ? '{$done}\\n' + d.migrations : (d.message || 'Failed') + '\\n' + JSON.stringify(d.errors || {}, null, 2);
             };
             </script>
             HTML);
@@ -91,7 +93,7 @@ class InstallController extends Controller
     private function authorizeToken(string $given): void
     {
         $token = (string) config('app.install_token');
-        abort_if($token === '', 404);
+        abort_if($token === '' || (config('app.install_first_run_only') && ! $this->needsAdmin()), 404);
         abort_unless(hash_equals($token, $given), 403, 'Invalid install token.');
     }
 }

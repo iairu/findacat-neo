@@ -5,6 +5,11 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
+// During the Vercel build (artisan vercel:build) the same defaults apply as at run time.
+if (getenv('VERCEL')) {
+    require_once __DIR__.'/vercel.php';
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         api: __DIR__.'/../routes/api.php',
