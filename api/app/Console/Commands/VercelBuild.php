@@ -26,6 +26,13 @@ class VercelBuild extends Command
     {
         $output = $this->option('output') ?: base_path('bootstrap/cache/vercel-secrets.php');
 
+        if (filled(config('app.key')) && ! $this->isValidKey((string) config('app.key'))) {
+            $this->error('APP_KEY is set in the project but is not a valid '.config('app.cipher').' key, so every request would fail.');
+            $this->error('Delete it under Settings → Environment Variables to have one generated, or set "base64:" followed by the output of `openssl rand -base64 32`, without quotes.');
+
+            return self::FAILURE;
+        }
+
         try {
             DB::connection()->getPdo();
         } catch (Throwable $e) {
@@ -59,6 +66,15 @@ class VercelBuild extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function isValidKey(string $key): bool
+    {
+        if (str_starts_with($key, 'base64:')) {
+            $key = base64_decode(substr($key, 7), true);
+        }
+
+        return $key !== false && Encrypter::supported($key, config('app.cipher'));
     }
 
     /**

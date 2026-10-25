@@ -66,6 +66,16 @@ class VercelBuildTest extends TestCase
         $this->assertDatabaseCount('app_secrets', 0);
     }
 
+    public function test_fails_on_an_invalid_project_key(): void
+    {
+        config(['app.key' => '"base64:'.base64_encode(random_bytes(32)).'"']);
+
+        $this->artisan('vercel:build', ['--output' => $this->output])
+            ->expectsOutputToContain('APP_KEY is set in the project but is not a valid')
+            ->assertFailed();
+        $this->assertDatabaseCount('app_secrets', 0);
+    }
+
     public function test_generated_setup_token_stops_working_once_an_admin_exists(): void
     {
         config(['app.install_token' => 'generated', 'app.install_first_run_only' => true, 'cache.stores.file' => ['driver' => 'array']]);
