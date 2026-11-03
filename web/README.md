@@ -11,6 +11,8 @@ npm run build     # static output in dist/
 npm run preview   # preview the production build
 ```
 
+The dev and preview servers proxy `/api` to `http://localhost:8000`. Start the API from the repository root with `npm run dev` (both servers) or `npm run dev:api` (API only).
+
 ## Structure
 
 ```text

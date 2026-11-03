@@ -3,13 +3,17 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import tailwindcss from '@tailwindcss/vite';
 
+// Local Laravel API. `scripts/dev` sets API_ORIGIN when the API runs on another port.
+const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:8000';
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [mdx()],
   vite: {
     plugins: [tailwindcss()],
-    // `astro dev` proxies the API so cookies stay same-origin, as in production.
-    server: { proxy: { '/api': 'http://localhost:8000' } },
+    // `astro dev` and `astro preview` proxy the API so cookies stay same-origin, as in production.
+    server: { proxy: { '/api': apiOrigin } },
+    preview: { proxy: { '/api': apiOrigin } },
   },
   // Code blocks follow the site theme (see `.astro-code` in global.css).
   markdown: {

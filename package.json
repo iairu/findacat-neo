@@ -6,7 +6,10 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "npm --prefix web run dev",
+    "setup": "scripts/dev setup",
+    "dev": "scripts/dev",
+    "dev:api": "scripts/dev api",
+    "dev:web": "scripts/dev web",
     "build": "npm --prefix web run build",
     "preview": "npm --prefix web run preview"
   },
