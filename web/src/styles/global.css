@@ -318,34 +318,39 @@ a.card:hover { border-color: var(--accent); color: var(--text); box-shadow: var(
 .search-form .form-error { grid-column: 1 / -1; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Cats search: a full-bleed subheader band that sits under the site header. */
-.cats-subheader {
-  position: relative; z-index: 30;
-  margin: 0 0 1.5rem; padding-block: 0.75rem;
-  background: var(--surface-2);
-  border-block: 1px solid var(--border);
-  box-shadow: 0 0 0 100vmax var(--surface-2);   /* extend the band to the viewport edges */
-  clip-path: inset(0 -100vmax);
+/* Subheader: a full-bleed band under the site header that holds a page's controls. */
+body { overflow-x: clip; }
+.subheader { position: relative; z-index: 30; margin: 0; padding-block: 0.75rem; }
+.subheader::before {
+  content: ''; position: absolute; z-index: -1; inset: 0 -100vmax;
+  background: var(--surface-2); border-block: 1px solid var(--border);
 }
-@media (min-width: 40rem) { .cats-subheader { position: sticky; top: 3.75rem; } }
-.cats-search { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; }
-.cats-search__field { flex: 1 1 8rem; min-width: 0; }
-.cats-search__field--name { flex: 2 1 14rem; }
-.cats-search input:not([type='checkbox']), .cats-search select {
+@media (min-width: 40rem) { .subheader { position: sticky; top: 3.75rem; } }
+.subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; margin: 0; max-width: none; }
+.subbar--end { align-items: end; }
+.subbar__field { flex: 1 1 8rem; min-width: 0; }
+.subbar__field--grow { flex: 2 1 14rem; }
+.subbar__host { flex: 1 1 14rem; min-width: 0; }
+.subbar .field { flex: 1 1 14rem; min-width: 0; gap: 0.2rem; }
+.subbar .field label { font-size: 0.82rem; color: var(--text-2); }
+.subbar input:not([type='checkbox']), .subbar select {
   width: 100%; min-height: 2.5rem; padding: 0.4rem 0.7rem; font: inherit; font-size: 0.97rem;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
 }
-.cats-search input::placeholder { color: var(--text-3); opacity: 1; }
-.cats-search input:focus-visible, .cats-search select:focus-visible { outline-offset: 0; border-color: var(--focus); }
-.cats-search__check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.93rem; color: var(--text-2); white-space: nowrap; cursor: pointer; }
-.cats-search__check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent-fill); margin: 0; }
-.cats-search__submit { min-height: 2.5rem; padding-block: 0.4rem; }
-.cats-search .form-error { flex: 1 0 100%; }
-.cats-search .form-error:empty { display: none; }
+.subbar input::placeholder { color: var(--text-3); opacity: 1; }
+.subbar input:focus-visible, .subbar select:focus-visible { outline-offset: 0; border-color: var(--focus); }
+.subbar__check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.93rem; color: var(--text-2); white-space: nowrap; cursor: pointer; }
+.subbar__check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent-fill); margin: 0; }
+.subbar .btn { min-height: 2.5rem; padding-block: 0.4rem; }
+.subbar .form-error { flex: 1 0 100%; }
+.subbar .form-error:empty { display: none; }
+.subbar__label { flex: 1 1 auto; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.subbar__label small { display: block; font-weight: 500; color: var(--text-3); font-size: 0.85rem; }
+.subbar__status { color: var(--ok); font-size: 0.93rem; }
 @media (max-width: 39.99rem) {
-  .cats-search__field--name, .cats-search__submit { flex-basis: 100%; }
-  .cats-search__field { flex-basis: calc(50% - 0.3rem); }
+  .subbar__field--grow, .subbar > .btn[type='submit'] { flex-basis: 100%; }
+  .subbar__field { flex-basis: calc(50% - 0.3rem); }
 }
 
 .mating-form { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); align-items: start; margin: 1.5rem 0 2rem; }

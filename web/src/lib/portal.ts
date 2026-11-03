@@ -6,6 +6,9 @@ type Json = any;
 const app = document.getElementById('app')!;
 const page = app.dataset.page!;
 const locale = app.dataset.locale!;
+const sub = document.getElementById('subheader')!;
+/** Page controls live in a band above the page heading (the slot is rendered by Portal.astro). */
+const subheader = (html: string) => { sub.innerHTML = `<div class="subheader">${html}</div>`; return sub; };
 const dict: Dict = JSON.parse(document.getElementById('i18n')!.textContent!);
 
 const t = (key: string, vars: Record<string, string | number> = {}) =>
@@ -89,17 +92,17 @@ function select(name: string, label: string, options: [string, string][], value 
 }
 
 /** Compact, placeholder-led fields for the cats page filter bar. */
-function compactInput(name: string, label: string, opts: { type?: string; value?: unknown; placeholder?: string; hint?: string; className?: string } = {}) {
+function compactInput(name: string, label: string, opts: { type?: string; value?: unknown; placeholder?: string; hint?: string; className?: string; required?: boolean; autocomplete?: string } = {}) {
   const id = 'f-' + name;
-  return `<div class="cats-search__field${opts.className ? ` ${opts.className}` : ''}">
+  return `<div class="subbar__field${opts.className ? ` ${opts.className}` : ''}">
     <label class="sr-only" for="${id}">${esc(label)}</label>
-    <input id="${id}" name="${name}" type="${opts.type ?? 'search'}" value="${esc(opts.value)}" placeholder="${esc(opts.placeholder ?? label)}"${opts.hint ? ` title="${esc(opts.hint)}"` : ''} autocomplete="off">
+    <input id="${id}" name="${name}" type="${opts.type ?? 'search'}" value="${esc(opts.value)}" placeholder="${esc(opts.placeholder ?? label)}"${opts.hint ? ` title="${esc(opts.hint)}"` : ''}${opts.required ? ' required' : ''} autocomplete="${opts.autocomplete ?? 'off'}">
   </div>`;
 }
 
 function compactSelect(name: string, label: string, options: [string, string][], value = '') {
   const id = 'f-' + name;
-  return `<div class="cats-search__field">
+  return `<div class="subbar__field">
     <label class="sr-only" for="${id}">${esc(label)}</label>
     <select id="${id}" name="${name}">${options.map(([v, l]) => `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
   </div>`;
@@ -189,19 +192,18 @@ function picker(host: HTMLElement, label: string, sex: 'male' | 'female', initia
 
 async function catsPage() {
   const sexOptions: [string, string][] = [['', t('cats.anySex')], ['male', t('common.male')], ['female', t('common.female')]];
-  app.innerHTML = `<div class="cats-subheader">
-      <form class="cats-search" role="search" aria-label="${esc(t('cats.title'))}">
-        ${compactInput('q', t('cats.name'), { value: params.get('q'), className: 'cats-search__field--name' })}
+  subheader(`<form class="subbar" role="search" aria-label="${esc(t('cats.title'))}">
+        ${compactInput('q', t('cats.name'), { value: params.get('q'), className: 'subbar__field--grow' })}
         ${compactSelect('sex', t('cat.fields.sex'), sexOptions, params.get('sex') ?? '')}
         ${compactInput('ems_code', t('cat.fields.ems'), { value: params.get('ems_code') })}
         ${compactInput('born', t('cat.fields.born'), { type: 'text', value: params.get('born'), hint: 'YYYY, YYYY-MM, YYYY-MM-DD' })}
         ${compactInput('reg_number', t('cat.fields.reg'), { value: params.get('reg_number') })}
-        <label class="cats-search__check"><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label>
-        <button class="btn btn--primary cats-search__submit" type="submit">${esc(t('common.search'))}</button>
+        <label class="subbar__check"><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label>
+        <button class="btn btn--primary" type="submit">${esc(t('common.search'))}</button>
         <p class="form-error" role="alert"></p>
-      </form>
-    </div><div id="results" aria-live="polite"></div>`;
-  const form = app.querySelector<HTMLFormElement>('form')!;
+      </form>`);
+  app.innerHTML = `<div id="results" aria-live="polite"></div>`;
+  const form = sub.querySelector<HTMLFormElement>('form')!;
   const results = app.querySelector<HTMLElement>('#results')!;
   const cards = (data: Json[]) => `<ul class="cat-cards">${data.map((c: Json) => catCard(c)).join('')}</ul>`;
 
@@ -281,14 +283,14 @@ async function catPage() {
 }
 
 function matingPage() {
-  app.innerHTML = `<p class="lead">${esc(t('mating.lead'))}</p>
-    <form class="mating-form"><div id="sire-host" data-name="sire"></div><div id="dam-host" data-name="dam"></div>
-      <div class="field field--actions"><button class="btn btn--primary" type="submit">${esc(t('mating.run'))}</button></div>
-      <p class="form-error" role="alert"></p></form><div id="out" aria-live="polite"></div>`;
-  const sire = picker(app.querySelector('#sire-host')!, t('mating.sire'), 'male');
-  const dam = picker(app.querySelector('#dam-host')!, t('mating.dam'), 'female');
+  subheader(`<form class="subbar subbar--end" role="search" aria-label="${esc(t('mating.title'))}"><div id="sire-host" class="subbar__host" data-name="sire"></div><div id="dam-host" class="subbar__host" data-name="dam"></div>
+      <button class="btn btn--primary" type="submit">${esc(t('mating.run'))}</button>
+      <p class="form-error" role="alert"></p></form>`);
+  app.innerHTML = `<p class="lead">${esc(t('mating.lead'))}</p><div id="out" aria-live="polite"></div>`;
+  const sire = picker(sub.querySelector('#sire-host')!, t('mating.sire'), 'male');
+  const dam = picker(sub.querySelector('#dam-host')!, t('mating.dam'), 'female');
   const out = app.querySelector<HTMLElement>('#out')!;
-  const form = app.querySelector<HTMLFormElement>('form')!;
+  const form = sub.querySelector<HTMLFormElement>('form')!;
   onSubmit(form, async () => {
     if (!sire.id || !dam.id) { form.querySelector('.form-error')!.textContent = t('mating.need'); return; }
     form.querySelector('.form-error')!.textContent = '';
@@ -303,14 +305,58 @@ function matingPage() {
 }
 
 async function birthdaysPage() {
-  app.innerHTML = `<p class="lead">${esc(t('birthdays.lead'))}</p><div id="out" aria-live="polite"><p>${esc(t('common.loading'))}</p></div>`;
+  const now = new Date();
+  const year = now.getFullYear();
+  const day = 86400000;
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mondayOf = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
+  const isoWeek = (monday: Date) => {
+    const thursday = addDays(monday, 3);
+    return Math.floor((thursday.getTime() - new Date(thursday.getFullYear(), 0, 1).getTime()) / day / 7) + 1;
+  };
+  const short = (d: Date) => d.toLocaleDateString(locale === 'sk' ? 'sk-SK' : 'en-GB', { day: 'numeric', month: 'short' });
+  const thisMonday = mondayOf(now);
+  let monday = thisMonday;
+
+  subheader(`<div class="subbar" role="group" aria-label="${esc(t('birthdays.title'))}">
+      <button class="btn btn--ghost" type="button" data-week="-1" aria-label="${esc(t('birthdays.prev'))}">‹</button>
+      <div class="subbar__label" id="week-label" aria-live="polite"></div>
+      <button class="btn btn--ghost" type="button" data-week="1" aria-label="${esc(t('birthdays.next'))}">›</button>
+      <button class="btn btn--ghost" type="button" id="this-week">${esc(t('birthdays.thisWeek'))}</button>
+    </div>`);
+  app.innerHTML = `<p class="lead">${esc(t('birthdays.lead'))}</p><div id="out" aria-live="polite"></div>`;
   const out = app.querySelector<HTMLElement>('#out')!;
-  try {
-    const { data } = await api('GET', '/birthdays');
-    out.innerHTML = data.length
-      ? `<ul class="cat-list">${data.map((b: Json) => `<li><a href="${catUrl(b.id)}"><strong>${esc(b.name)}</strong><span>${esc(fmtDate(b.birthday))} · ${esc(t('birthdays.turns', { n: b.turns }))}</span></a></li>`).join('')}</ul>`
-      : `<p class="empty">${esc(t('common.empty'))}</p>`;
-  } catch (e) { out.innerHTML = note('error', messageOf(e)); }
+  const label = sub.querySelector<HTMLElement>('#week-label')!;
+  const prev = sub.querySelector<HTMLButtonElement>('[data-week="-1"]')!;
+  const next = sub.querySelector<HTMLButtonElement>('[data-week="1"]')!;
+  const current = sub.querySelector<HTMLButtonElement>('#this-week')!;
+
+  async function load() {
+    const sunday = addDays(monday, 6);
+    label.innerHTML = `${esc(t('birthdays.week', { n: isoWeek(monday) }))}<small>${esc(short(monday))} – ${esc(short(sunday))}</small>`;
+    // The API works within the current year, so weeks are kept inside it.
+    prev.disabled = addDays(monday, -1).getFullYear() < year;
+    next.disabled = addDays(monday, 7).getFullYear() > year;
+    current.disabled = monday.getTime() === thisMonday.getTime();
+    out.innerHTML = `<p>${esc(t('common.loading'))}</p>`;
+    const start = monday.getFullYear() < year ? new Date(year, 0, 1) : monday;
+    try {
+      const { data } = await api('GET', '/birthdays' + query({ month: start.getMonth() + 1, day: start.getDate() }));
+      const from = iso(monday), to = iso(sunday);
+      const rows = data.filter((b: Json) => b.birthday >= from && b.birthday <= to);
+      out.innerHTML = rows.length
+        ? `<ul class="cat-list">${rows.map((b: Json) => `<li><a href="${catUrl(b.id)}"><strong>${esc(b.name)}</strong><span>${esc(fmtDate(b.birthday))} · ${esc(t('birthdays.turns', { n: b.turns }))}</span></a></li>`).join('')}</ul>`
+        : `<p class="empty">${esc(t('common.empty'))}</p>`;
+    } catch (e) { out.innerHTML = note('error', messageOf(e)); }
+  }
+  sub.querySelector('.subbar')!.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b || b.disabled) return;
+    monday = b.id === 'this-week' ? thisMonday : addDays(monday, Number(b.dataset.week) * 7);
+    load();
+  });
+  load();
 }
 
 function authForm(fields: string, submitLabel: string) {
@@ -371,12 +417,14 @@ async function accountPage() {
   const user = await me();
   if (!user) { app.innerHTML = loginPrompt(); return; }
   const statusLabel = (s: string) => t('status.' + s);
+  subheader(`<form class="subbar" id="profile" aria-label="${esc(t('account.title'))}" novalidate>
+      ${compactInput('name', t('auth.name'), { type: 'text', value: user.name, required: true, autocomplete: 'name', className: 'subbar__field--grow' })}
+      ${compactSelect('locale', t('auth.language'), [['en', 'English'], ['sk', 'Slovenčina']], user.locale)}
+      <button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button><span class="subbar__status" id="saved" role="status"></span>
+      <p class="form-error" role="alert"></p></form>`);
   app.innerHTML = `${params.get('verified') ? note('ok', t('auth.verifiedNow')) : ''}
     ${user.verified ? '' : `<div class="notice notice--info">${esc(t('auth.verifyNotice'))} <button class="btn btn--ghost" id="resend" type="button">${esc(t('auth.verifyResend'))}</button><span id="resend-out"></span></div>`}
     <p class="lead">${esc(user.name)} · ${esc(user.email)}</p>
-    <form class="stack" id="profile" novalidate>${input('name', t('auth.name'), { value: user.name, required: true })}
-      ${select('locale', t('auth.language'), [['en', 'English'], ['sk', 'Slovenčina']], user.locale)}
-      <p class="form-error" role="alert"></p><div class="row"><button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button><span id="saved"></span></div></form>
     <p class="row">${user.is_admin ? `<a class="btn btn--ghost" href="${href('/admin/')}">${esc(t('nav.admin'))}</a>` : ''}<button class="btn btn--ghost" id="logout" type="button">${esc(t('auth.logout'))}</button></p>
     <section id="mine"></section>`;
   app.querySelector('#resend')?.addEventListener('click', async () => {
@@ -387,9 +435,9 @@ async function accountPage() {
     setHint(null);
     location.href = href('/');
   });
-  onSubmit(app.querySelector('#profile')!, async (d) => {
+  onSubmit(sub.querySelector('#profile')!, async (d) => {
     await api('PATCH', '/user', d);
-    app.querySelector('#saved')!.textContent = t('account.saved');
+    sub.querySelector('#saved')!.textContent = t('account.saved');
   });
   const mine = app.querySelector<HTMLElement>('#mine')!;
   if (!user.verified) return;

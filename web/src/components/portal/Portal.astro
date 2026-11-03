@@ -9,6 +9,7 @@ const dict = portalUi[locale];
 const title = dict[portalTitles[page]];
 ---
 <BaseLayout title={title}>
+  <div class="container"><div id="subheader"></div></div>
   <div class="container portal">
     <h1 class="portal__title">{title}</h1>
     <div id="app" data-page={page} data-locale={locale}>
