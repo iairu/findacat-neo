@@ -19,6 +19,7 @@ Chyby používajú štandardné stavové kódy. Neplatný vstup vracia `422` s `
 | `GET /health` | Kontrola dostupnosti |
 | `GET /settings` | Verejné nastavenia stránky: `{ "signups": true }` |
 | `GET /cats` | Hľadanie. Parametre: `q`, `exact`, `sex` (`male`/`female`), `breed_code`, `ems_code`, `born`, `reg_number`, `per_page` (max 100). Stránkované |
+| `GET /cats/random` | Náhodný výber schválených mačiek na úvod. Parameter: `limit` (max 50, predvolene 10). Niestránkované |
 | `GET /cats/{id}` | Jedna mačka s `inbreeding`, `sire`, `dam`, `children` a `can_edit` |
 | `GET /cats/{id}/pedigree` | Strom predkov. Parameter: `generations` (1–6) |
 | `GET /test-mating` | Parametre: `sire`, `dam`, voliteľne `generations`. Vráti `inbreeding` pre predstavené mačiatko a stromy `sire` a `dam` |

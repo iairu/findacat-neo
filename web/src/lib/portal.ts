@@ -88,6 +88,23 @@ function select(name: string, label: string, options: [string, string][], value 
     <small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
 }
 
+/** Compact, placeholder-led fields for the cats page filter bar. */
+function compactInput(name: string, label: string, opts: { type?: string; value?: unknown; placeholder?: string; hint?: string; className?: string } = {}) {
+  const id = 'f-' + name;
+  return `<div class="cats-search__field${opts.className ? ` ${opts.className}` : ''}">
+    <label class="sr-only" for="${id}">${esc(label)}</label>
+    <input id="${id}" name="${name}" type="${opts.type ?? 'search'}" value="${esc(opts.value)}" placeholder="${esc(opts.placeholder ?? label)}"${opts.hint ? ` title="${esc(opts.hint)}"` : ''} autocomplete="off">
+  </div>`;
+}
+
+function compactSelect(name: string, label: string, options: [string, string][], value = '') {
+  const id = 'f-' + name;
+  return `<div class="cats-search__field">
+    <label class="sr-only" for="${id}">${esc(label)}</label>
+    <select id="${id}" name="${name}">${options.map(([v, l]) => `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+  </div>`;
+}
+
 function showErrors(form: HTMLElement, e: unknown) {
   form.querySelectorAll('.field-error').forEach((el) => (el.textContent = ''));
   const general = form.querySelector('.form-error')!;
@@ -171,19 +188,32 @@ function picker(host: HTMLElement, label: string, sex: 'male' | 'female', initia
 // ---------------------------------------------------------------- pages
 
 async function catsPage() {
-  const sexOptions: [string, string][] = [['', t('common.any')], ['male', t('common.male')], ['female', t('common.female')]];
-  app.innerHTML = `<form class="search-form" role="search">
-      ${input('q', t('cats.name'), { value: params.get('q') })}
-      ${select('sex', t('cat.fields.sex'), sexOptions, params.get('sex') ?? '')}
-      ${input('ems_code', t('cat.fields.ems'), { value: params.get('ems_code') })}
-      ${input('born', t('cats.born'), { value: params.get('born'), hint: 'YYYY, YYYY-MM, YYYY-MM-DD' })}
-      ${input('reg_number', t('cats.reg'), { value: params.get('reg_number') })}
-      <div class="field field--check"><label><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label></div>
-      <div class="field field--actions"><button class="btn btn--primary" type="submit">${esc(t('common.search'))}</button></div>
-      <p class="form-error" role="alert"></p>
-    </form><div id="results" aria-live="polite"></div>`;
+  const sexOptions: [string, string][] = [['', t('cats.anySex')], ['male', t('common.male')], ['female', t('common.female')]];
+  app.innerHTML = `<div class="cats-subheader">
+      <form class="cats-search" role="search" aria-label="${esc(t('cats.title'))}">
+        ${compactInput('q', t('cats.name'), { value: params.get('q'), className: 'cats-search__field--name' })}
+        ${compactSelect('sex', t('cat.fields.sex'), sexOptions, params.get('sex') ?? '')}
+        ${compactInput('ems_code', t('cat.fields.ems'), { value: params.get('ems_code') })}
+        ${compactInput('born', t('cat.fields.born'), { type: 'text', value: params.get('born'), hint: 'YYYY, YYYY-MM, YYYY-MM-DD' })}
+        ${compactInput('reg_number', t('cat.fields.reg'), { value: params.get('reg_number') })}
+        <label class="cats-search__check"><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label>
+        <button class="btn btn--primary cats-search__submit" type="submit">${esc(t('common.search'))}</button>
+        <p class="form-error" role="alert"></p>
+      </form>
+    </div><div id="results" aria-live="polite"></div>`;
   const form = app.querySelector<HTMLFormElement>('form')!;
   const results = app.querySelector<HTMLElement>('#results')!;
+  const cards = (data: Json[]) => `<ul class="cat-cards">${data.map((c: Json) => catCard(c)).join('')}</ul>`;
+
+  async function loadRandom() {
+    results.innerHTML = `<p>${esc(t('common.loading'))}</p>`;
+    try {
+      const res = await api('GET', '/cats/random?limit=10');
+      results.innerHTML = res.data.length
+        ? `<p class="count">${esc(t('cats.random', { n: res.data.length }))}</p>${cards(res.data)}`
+        : `<p class="empty">${esc(t('common.empty'))}</p>`;
+    } catch (e) { results.innerHTML = note('error', messageOf(e)); }
+  }
 
   async function run(pageNo: number) {
     const f = Object.fromEntries(new FormData(form)) as Record<string, string>;
@@ -192,8 +222,7 @@ async function catsPage() {
     try {
       const res = await api('GET', '/cats' + query({ ...f, page: pageNo }));
       if (!res.data.length) { results.innerHTML = `<p class="empty">${esc(t('common.empty'))}</p>`; return; }
-      results.innerHTML = `<p class="count">${esc(t('cats.count', { n: res.total }))}</p>
-        <ul class="cat-cards">${res.data.map((c: Json) => catCard(c)).join('')}</ul>
+      results.innerHTML = `<p class="count">${esc(t('cats.count', { n: res.total }))}</p>${cards(res.data)}
         ${res.last_page > 1 ? `<nav class="pager"><button class="btn btn--ghost" data-go="${res.current_page - 1}"${res.current_page <= 1 ? ' disabled' : ''}>${esc(t('common.prev'))}</button>
           <span>${esc(t('common.page', { page: res.current_page, last: res.last_page }))}</span>
           <button class="btn btn--ghost" data-go="${res.current_page + 1}"${res.current_page >= res.last_page ? ' disabled' : ''}>${esc(t('common.next'))}</button></nav>` : ''}`;
@@ -204,7 +233,9 @@ async function catsPage() {
     if (b) run(Number(b.dataset.go));
   });
   form.addEventListener('submit', (ev) => { ev.preventDefault(); run(1); });
-  if ([...params.keys()].some((k) => k !== 'page')) run(Number(params.get('page') ?? 1));
+  const hasSearch = ['q', 'sex', 'ems_code', 'born', 'reg_number'].some((key) => params.get(key));
+  if (hasSearch) run(Number(params.get('page') ?? 1));
+  else loadRandom();
 }
 
 async function catPage() {

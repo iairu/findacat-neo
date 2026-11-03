@@ -316,6 +316,38 @@ a.card:hover { border-color: var(--accent); color: var(--text); box-shadow: var(
 .field--actions { align-self: end; }
 .search-form { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); align-items: start; margin-bottom: 2rem; }
 .search-form .form-error { grid-column: 1 / -1; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Cats search: a full-bleed subheader band that sits under the site header. */
+.cats-subheader {
+  position: relative; z-index: 30;
+  margin: 0 0 1.5rem; padding-block: 0.75rem;
+  background: var(--surface-2);
+  border-block: 1px solid var(--border);
+  box-shadow: 0 0 0 100vmax var(--surface-2);   /* extend the band to the viewport edges */
+  clip-path: inset(0 -100vmax);
+}
+@media (min-width: 40rem) { .cats-subheader { position: sticky; top: 3.75rem; } }
+.cats-search { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; }
+.cats-search__field { flex: 1 1 8rem; min-width: 0; }
+.cats-search__field--name { flex: 2 1 14rem; }
+.cats-search input:not([type='checkbox']), .cats-search select {
+  width: 100%; min-height: 2.5rem; padding: 0.4rem 0.7rem; font: inherit; font-size: 0.97rem;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+}
+.cats-search input::placeholder { color: var(--text-3); opacity: 1; }
+.cats-search input:focus-visible, .cats-search select:focus-visible { outline-offset: 0; border-color: var(--focus); }
+.cats-search__check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.93rem; color: var(--text-2); white-space: nowrap; cursor: pointer; }
+.cats-search__check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent-fill); margin: 0; }
+.cats-search__submit { min-height: 2.5rem; padding-block: 0.4rem; }
+.cats-search .form-error { flex: 1 0 100%; }
+.cats-search .form-error:empty { display: none; }
+@media (max-width: 39.99rem) {
+  .cats-search__field--name, .cats-search__submit { flex-basis: 100%; }
+  .cats-search__field { flex-basis: calc(50% - 0.3rem); }
+}
+
 .mating-form { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); align-items: start; margin: 1.5rem 0 2rem; }
 .mating-form .form-error { grid-column: 1 / -1; }
 

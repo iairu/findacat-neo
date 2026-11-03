@@ -60,6 +60,22 @@ class CatApiTest extends TestCase
         $this->getJson('/api/cats?q=%25')->assertOk()->assertJsonCount(0, 'data');
     }
 
+    public function test_random_cats_returns_a_limited_selection_of_approved_cats(): void
+    {
+        for ($i = 1; $i <= 12; $i++) {
+            $this->cat("Random {$i}", Cat::MALE);
+        }
+        $this->cat('Hidden Random', Cat::FEMALE, ['moderation_status' => 'pending']);
+
+        $rows = $this->getJson('/api/cats/random')->assertOk()
+            ->assertJsonCount(10, 'data')->json('data');
+        $this->assertNotContains('Hidden Random', array_column($rows, 'name'));
+
+        $this->getJson('/api/cats/random?limit=3')->assertOk()->assertJsonCount(3, 'data');
+        $this->getJson('/api/cats/random?limit=0')->assertUnprocessable();
+        $this->getJson('/api/cats/random?limit=51')->assertUnprocessable();
+    }
+
     public function test_show_includes_inbreeding_and_kittens(): void
     {
         $a = $this->cat('A', Cat::MALE);

@@ -69,6 +69,19 @@ class CatController extends Controller
         return $query->orderBy('name')->paginate($data['per_page'] ?? 24, self::LIST_COLUMNS);
     }
 
+    /** A random selection of approved cats for the initial search page. */
+    public function random(Request $request): array
+    {
+        $data = $request->validate([
+            'limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        return [
+            'data' => Cat::query()->approved()->inRandomOrder()
+                ->limit($data['limit'] ?? 10)->get(self::LIST_COLUMNS),
+        ];
+    }
+
     /** The signed-in user's own cats, whatever their moderation status. */
     public function mine(Request $request): array
     {

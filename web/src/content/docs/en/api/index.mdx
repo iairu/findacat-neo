@@ -19,6 +19,7 @@ Errors use standard status codes. Validation failures return `422` with `{ "mess
 | `GET /health` | Liveness check |
 | `GET /settings` | Public site settings: `{ "signups": true }` |
 | `GET /cats` | Search. Query: `q`, `exact`, `sex` (`male`/`female`), `breed_code`, `ems_code`, `born`, `reg_number`, `per_page` (max 100). Paginated |
+| `GET /cats/random` | A random selection of approved cats for suggestions. Query: `limit` (max 50, default 10). Not paginated |
 | `GET /cats/{id}` | One cat with `inbreeding`, `sire`, `dam`, `children` and `can_edit` |
 | `GET /cats/{id}/pedigree` | Ancestor tree. Query: `generations` (1–6) |
 | `GET /test-mating` | Query: `sire`, `dam`, optional `generations`. Returns `inbreeding` for an imaginary kitten, plus the `sire` and `dam` trees |

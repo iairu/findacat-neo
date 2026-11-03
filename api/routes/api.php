@@ -49,6 +49,7 @@ Route::get('/birthdays', [LookupController::class, 'birthdays']);
 Route::get('/test-mating', [LookupController::class, 'testMating']);
 
 Route::get('/cats', [CatController::class, 'index']);
+Route::get('/cats/random', [CatController::class, 'random']);
 Route::get('/cats/{cat}', [CatController::class, 'show']);
 Route::get('/cats/{cat}/pedigree', [CatController::class, 'pedigree']);
 
