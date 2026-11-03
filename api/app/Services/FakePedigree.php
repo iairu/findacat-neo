@@ -239,7 +239,7 @@ class FakePedigree
                 ['d', 'Red'],
                 ['e', 'Cream'],
                 ['w 62', 'White, orange eyes'],
-                ['ns 22', 'Brown tabby'],
+                ['ns 22', 'Black silver mackerel tabby'],
             ] as [$code, $name]) {
                 $ems->push(EmsColor::create(['code' => $code, 'english_name' => $name, 'breed_id' => $breedId]));
                 $created['ems']++;

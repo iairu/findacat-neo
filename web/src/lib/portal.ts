@@ -23,14 +23,50 @@ const sexLabel = (s?: string | null) => (s === 'male' ? t('common.male') : s ===
 const catUrl = (id: string) => href(`/cat/?id=${encodeURIComponent(id)}`);
 const catName = (c: Json) => [c.title_prefix, c.name, c.title_suffix].filter(Boolean).join(' ');
 
+// ---------------------------------------------------------------- EMS colours
+
+const normEms = (v: unknown) => String(v ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** First EMS letter = coat colour; a trailing s / y in the first group marks silver / golden. */
+const COAT: Record<string, string> = {
+  n: 'black', a: 'blue', b: 'chocolate', c: 'lilac', o: 'cinnamon', p: 'fawn', d: 'red', e: 'cream', w: 'white',
+  f: 'black-tortie', g: 'blue-tortie', h: 'chocolate-tortie', j: 'lilac-tortie', q: 'cinnamon-tortie', r: 'fawn-tortie',
+};
+
+/** CSS classes colouring a code (and its name) by the coat colour the code spells out; '' when unrecognised. */
+function coatClass(code: unknown) {
+  const group = normEms(code).split(' ')[0] ?? '';
+  const coat = group.length <= 3 ? COAT[group[0] ?? ''] : undefined;
+  if (!coat) return '';
+  return `coat coat--${coat}${group.slice(1).includes('s') ? ' coat--silver' : ''}${group.slice(1).includes('y') ? ' coat--golden' : ''}`;
+}
+
+/**
+ * Exact code -> name match, mirroring the API: case and spacing are ignored, never a prefix.
+ * The cat's own breed wins; otherwise the name must be the same on every row, else it is ambiguous (null).
+ */
+function emsName(rows: Json[], breeds: Json[], code: unknown, breedCode?: unknown): string | null {
+  const key = normEms(code);
+  const matches = key ? rows.filter((r) => String(r.english_name ?? '').trim() && normEms(r.code) === key) : [];
+  if (!matches.length) return null;
+  const breed = normEms(breedCode);
+  const own = breed ? matches.find((r) => normEms(breeds.find((b) => b.id === r.breed_id)?.code) === breed) : undefined;
+  if (own) return String(own.english_name).trim();
+  return new Set(matches.map((r) => normEms(r.english_name))).size === 1 ? String(matches[0].english_name).trim() : null;
+}
+
+const emsBadge = (code: string, name?: string | null) =>
+  `<span class="ems ${coatClass(code)}"><span class="ems__swatch" aria-hidden="true"></span><span class="ems__code">${esc(code)}</span>${name ? ` <span class="ems__name">${esc(name)}</span>` : ''}</span>`;
+
 const catCard = (c: Json) => {
   const titles = [c.title_prefix, c.title_suffix].filter(Boolean).join(' ');
   const deceased = Boolean(c.died_on);
   const sexClass = c.sex === 'male' ? 'cat-card--male' : c.sex === 'female' ? 'cat-card--female' : '';
   const classes = ['cat-card', sexClass, deceased ? 'cat-card--deceased' : '', titles ? 'cat-card--titled' : ''].filter(Boolean).join(' ');
   const sexSymbol = c.sex === 'male' ? '♂' : c.sex === 'female' ? '♀' : '';
-  const fact = (label: string, value: unknown, kind: string) => (value
-    ? `<div class="cat-card__fact cat-card__fact--${kind}"><dt>${esc(label)}</dt><dd title="${esc(value)}">${esc(value)}</dd></div>` : '');
+  const coat = c.ems_code ? coatClass(c.ems_code) : '';
+  const fact = (label: string, value: unknown, kind: string, extra = '') => (value
+    ? `<div class="cat-card__fact cat-card__fact--${kind}${extra ? ` ${extra}` : ''}"><dt>${esc(label)}</dt><dd title="${esc(value)}">${esc(value)}</dd></div>` : '');
   return `<li class="${classes}"><a class="cat-card__link" href="${catUrl(c.id)}">
     <div class="cat-card__media">
       ${c.photo ? `<img class="cat-card__photo" src="${esc(c.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-card__placeholder" aria-hidden="true">🐾</div>`}
@@ -41,9 +77,10 @@ const catCard = (c: Json) => {
       <p class="cat-card__chips">
         ${deceased ? `<span class="cat-card__badge cat-card__badge--deceased">${esc(t('cats.deceased'))}</span>` : ''}
         ${c.breed_code ? `<span class="cat-chip cat-chip--breed">${esc(t('cat.fields.breed'))} <strong>${esc(c.breed_code)}</strong></span>` : ''}
-        ${c.ems_code ? `<span class="cat-chip cat-chip--ems">${esc(t('cat.fields.ems'))} <strong>${esc(c.ems_code)}</strong></span>` : ''}
+        ${c.ems_code ? `<span class="cat-chip cat-chip--ems ${coat}"${c.ems_name ? ` title="${esc(c.ems_name)}"` : ''}><span class="ems__swatch" aria-hidden="true"></span>${esc(t('cat.fields.ems'))} <strong>${esc(c.ems_code)}</strong></span>` : ''}
       </p>
       <dl class="cat-card__facts">
+        ${fact(t('cat.fields.colour'), c.ems_name, 'colour', coat)}
         ${fact(t('cat.fields.born'), fmtDate(c.born_on), 'born')}
         ${deceased ? fact(t('cat.fields.died'), fmtDate(c.died_on), 'died') : ''}
         ${fact(t('cat.fields.reg'), c.reg_number, 'reg')}
@@ -265,7 +302,7 @@ async function catPage() {
     const { data: c } = await api('GET', `/cats/${encodeURIComponent(id)}`);
     document.title = catName(c) + ' · ' + document.title;
     document.querySelector('.portal__title')!.textContent = catName(c);
-    const row = (label: string, value: unknown, kind = '') => (value ? `<div class="fact${kind ? ` fact--${kind}` : ''}"><dt>${esc(label)}</dt><dd>${value}</dd></div>` : '');
+    const row = (label: string, value: unknown, kind = '', extra = '') => (value ? `<div class="fact${kind ? ` fact--${kind}` : ''}${extra ? ` ${extra}` : ''}"><dt>${esc(label)}</dt><dd>${value}</dd></div>` : '');
     const parent = (p: Json | null, fallbackId: string | null) => (p ? `<a href="${catUrl(p.id)}">${esc(p.name)}</a>` : fallbackId ? esc(t('common.unknown')) : '');
     app.innerHTML = `
       ${c.moderation_status === 'pending' ? note('info', t('cat.pendingNote')) : ''}${c.moderation_status === 'rejected' ? note('error', t('cat.rejectedNote')) : ''}
@@ -273,7 +310,7 @@ async function catPage() {
       <div class="cat-grid">
         <dl class="facts">
           ${row(t('cat.fields.sex'), esc(sexLabel(c.sex)), c.sex === 'male' ? 'male' : c.sex === 'female' ? 'female' : '')}${row(t('cat.fields.born'), esc(fmtDate(c.born_on)), 'born')}${row(t('cat.fields.died'), esc(fmtDate(c.died_on)), 'died')}
-          ${row(t('cat.fields.breed'), esc(c.breed_code), 'breed')}${row(t('cat.fields.ems'), esc(c.ems_code), 'ems')}${row(t('cat.fields.reg'), esc(c.reg_number), 'reg')}
+          ${row(t('cat.fields.breed'), esc(c.breed_code), 'breed')}${row(t('cat.fields.ems'), c.ems_code ? emsBadge(c.ems_code, c.ems_name) : '', 'ems', coatClass(c.ems_code))}${row(t('cat.fields.reg'), esc(c.reg_number), 'reg')}
           ${row(t('cat.fields.sire'), parent(c.sire, c.sire_id), 'male')}${row(t('cat.fields.dam'), parent(c.dam, c.dam_id), 'female')}
           ${row(t('cat.fields.breeder'), esc(c.breeder), 'breeder')}${row(t('cat.fields.owner'), esc(c.owner_name), 'owner')}${row(t('cat.fields.country'), esc(c.country), 'country')}
           ${row(t('cat.fields.notes'), esc(c.notes))}
@@ -482,6 +519,10 @@ async function catEditPage() {
   const breedOptions = breeds.map((b): [string, string] => [b.code, b.name ?? '']);
   const breedOf = Object.fromEntries(breeds.map((b) => [b.id, b.code]));
   const emsOptions = emsColors.map((e): [string, string] => [e.code, [breedOf[e.breed_id], e.english_name].filter(Boolean).join(' · ')]);
+  const emsHint = (breed: unknown, code: unknown) => {
+    const name = emsName(emsColors, breeds, code, breed);
+    return normEms(code) ? (name ? emsBadge(String(code).trim(), name) : `<span class="ems-hint__none">${esc(t('edit.emsUnknown'))}</span>`) : '';
+  };
   const titleOptions: [string, string][] = ['CH', 'IC', 'GIC', 'SC', 'IP', 'GIP', 'NW', 'WW', 'JW', 'DSM', 'DVM', 'DM'].map((x) => [x, '']);
   const text = (name: string, label: string, type = 'text') => input(name, label, { value: cat[name], type });
   app.innerHTML = `<form class="stack cat-form" novalidate>
@@ -497,6 +538,16 @@ async function catEditPage() {
       <p class="form-error" role="alert"></p>
       <div class="row"><button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button>
         ${id ? `<button class="btn btn--ghost" type="button" id="delete">${esc(t('common.delete'))}</button>` : ''}</div></form>`;
+  const emsInput = app.querySelector<HTMLInputElement>('#f-ems_code')!;
+  const breedInput = app.querySelector<HTMLInputElement>('#f-breed_code')!;
+  const hint = document.createElement('small');
+  hint.className = 'ems-hint';
+  hint.setAttribute('aria-live', 'polite');
+  emsInput.closest('.field')!.querySelector('datalist')!.after(hint);
+  const refreshHint = () => { hint.innerHTML = emsHint(breedInput.value, emsInput.value); };
+  emsInput.addEventListener('input', refreshHint);
+  breedInput.addEventListener('input', refreshHint);
+  refreshHint();
   const sire = picker(app.querySelector('#sire-host')!, t('cat.fields.sire'), 'male', cat.sire ?? null);
   const dam = picker(app.querySelector('#dam-host')!, t('cat.fields.dam'), 'female', cat.dam ?? null);
   const form = app.querySelector<HTMLFormElement>('form')!;

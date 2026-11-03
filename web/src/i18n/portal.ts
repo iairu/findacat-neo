@@ -29,6 +29,7 @@ export const portalUi = {
     'cat.fields.sex': 'Sex',
     'cat.fields.breed': 'Breed',
     'cat.fields.ems': 'EMS colour',
+    'cat.fields.colour': 'Colour',
     'cat.fields.reg': 'Registration',
     'cat.fields.breeder': 'Breeder',
     'cat.fields.owner': 'Owner',
@@ -148,6 +149,7 @@ export const portalUi = {
     'edit.newTitle': 'Add a cat',
     'edit.editTitle': 'Edit cat',
     'edit.savedPending': 'Saved. The cat will appear in searches once an admin approves it.',
+    'edit.emsUnknown': 'Custom code: no colour name on record.',
     'edit.confirmDelete': 'Delete this cat for good?',
   },
   sk: {
@@ -177,6 +179,7 @@ export const portalUi = {
     'cat.fields.sex': 'Pohlavie',
     'cat.fields.breed': 'Plemeno',
     'cat.fields.ems': 'Farba EMS',
+    'cat.fields.colour': 'Farba',
     'cat.fields.reg': 'Registrácia',
     'cat.fields.breeder': 'Chovateľ',
     'cat.fields.owner': 'Majiteľ',
@@ -296,6 +299,7 @@ export const portalUi = {
     'edit.newTitle': 'Pridať mačku',
     'edit.editTitle': 'Upraviť mačku',
     'edit.savedPending': 'Uložené. Mačka sa objaví vo vyhľadávaní po schválení administrátorom.',
+    'edit.emsUnknown': 'Vlastný kód: v zozname nie je názov farby.',
     'edit.confirmDelete': 'Naozaj natrvalo zmazať túto mačku?',
   },
 } as const satisfies Record<Locale, Record<string, string>>;

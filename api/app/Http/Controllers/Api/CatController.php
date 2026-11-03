@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cat;
+use App\Services\EmsLookup;
 use App\Services\Inbreeding;
 use App\Services\Pedigree;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class CatController extends Controller
         'vet_confirmation',
     ];
 
-    public function __construct(private Pedigree $pedigree) {}
+    public function __construct(private Pedigree $pedigree, private EmsLookup $ems) {}
 
     public function index(Request $request)
     {
@@ -66,7 +67,10 @@ class CatController extends Controller
                 ->orWhere(fn ($q2) => $match($q2, 'reg_number_last', $data['reg_number'])));
         }
 
-        return $query->orderBy('name')->paginate($data['per_page'] ?? 24, self::LIST_COLUMNS);
+        $page = $query->orderBy('name')->paginate($data['per_page'] ?? 24, self::LIST_COLUMNS);
+        $this->ems->annotate($page->getCollection());
+
+        return $page;
     }
 
     /** A random selection of approved cats for the initial search page. */
@@ -76,10 +80,10 @@ class CatController extends Controller
             'limit' => 'nullable|integer|min:1|max:50',
         ]);
 
-        return [
-            'data' => Cat::query()->approved()->inRandomOrder()
-                ->limit($data['limit'] ?? 10)->get(self::LIST_COLUMNS),
-        ];
+        $cats = Cat::query()->approved()->inRandomOrder()->limit($data['limit'] ?? 10)->get(self::LIST_COLUMNS);
+        $this->ems->annotate($cats);
+
+        return ['data' => $cats];
     }
 
     /** The signed-in user's own cats, whatever their moderation status. */
@@ -93,6 +97,7 @@ class CatController extends Controller
         $cat = $this->findVisible($request, $id);
         $cat->load(['sire:id,name', 'dam:id,name', 'owner:id,name']);
         $children = $cat->children()->approved()->orderBy('born_on')->get(['id', 'name', 'sex', 'born_on']);
+        $this->ems->annotate([$cat]);
 
         return [
             'data' => array_merge($cat->toArray(), [

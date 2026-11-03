@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Breed;
 use App\Models\Cat;
+use App\Models\EmsColor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -39,6 +41,30 @@ class CatApiTest extends TestCase
             ->assertJsonPath('data.0.country', 'SK');
         $this->getJson('/api/cats?q=whisk&sex=female')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/cats?ems_code=n')->assertOk()->assertJsonCount(1, 'data');
+    }
+
+    public function test_ems_code_resolves_to_its_colour_name_exactly(): void
+    {
+        $per = Breed::create(['code' => 'PER', 'name' => 'Persian']);
+        $mco = Breed::create(['code' => 'MCO', 'name' => 'Maine Coon']);
+        EmsColor::create(['code' => 'ns 22', 'english_name' => 'Black silver mackerel tabby', 'breed_id' => $per->id]);
+        EmsColor::create(['code' => 'n', 'english_name' => 'Black']);
+        EmsColor::create(['code' => 'a', 'english_name' => 'Blue', 'breed_id' => $per->id]);
+        EmsColor::create(['code' => 'a', 'english_name' => 'Blue (MCO)', 'breed_id' => $mco->id]);
+        EmsColor::create(['code' => 'w 62', 'english_name' => 'White, orange eyes', 'breed_id' => $per->id]);
+        EmsColor::create(['code' => 'w 62', 'english_name' => 'White, orange eyes', 'breed_id' => $mco->id]);
+
+        $names = fn (array $extra) => $this->getJson('/api/cats/'.$this->cat('C', Cat::MALE, $extra)->id)->assertOk()->json('data.ems_name');
+
+        $this->assertSame('Black silver mackerel tabby', $names(['ems_code' => ' NS   22 ']));   // case and spacing are ignored
+        $this->assertSame('Black', $names(['ems_code' => 'n']));                                  // "n" is not a prefix of "ns 22"
+        $this->assertNull($names(['ems_code' => 'ns']));                                           // no partial matches
+        $this->assertSame('Blue (MCO)', $names(['ems_code' => 'a', 'breed_code' => 'mco']));      // the cat's breed wins
+        $this->assertNull($names(['ems_code' => 'a']));                                            // ambiguous without a breed
+        $this->assertSame('White, orange eyes', $names(['ems_code' => 'w 62']));                  // all rows agree
+        $this->assertNull($names(['ems_code' => null]));
+
+        $this->getJson('/api/cats?ems_code=ns 22&exact=1')->assertOk()->assertJsonPath('data.0.ems_name', 'Black silver mackerel tabby');
     }
 
     public function test_search_by_birth_year_month_or_day(): void
