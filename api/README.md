@@ -13,6 +13,7 @@ From the repository root, `npm run setup` prepares the API and `npm run dev` sta
 ```bash
 npm run setup
 npm run dev      # API on :8000, Astro on :4321
+npm run admin    # create a fresh admin, prints email:password
 ```
 
 To run the API on its own, or set it up manually:

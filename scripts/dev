@@ -5,6 +5,7 @@
 #   scripts/dev api      # API only
 #   scripts/dev web      # Astro only (expects an API on :8000)
 #   scripts/dev setup    # install dependencies, create .env, key and database, then exit
+#   scripts/dev admin    # create a fresh administrator and print email:password
 #
 # PHP and Composer are used when installed; otherwise the commands run through the
 # `composer:2` Docker image. The Astro dev server proxies /api to :8000 (see
@@ -22,7 +23,7 @@ API_CONTAINER="findacat-api-dev"
 set -m
 
 usage() {
-  sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 say() { printf '\033[1m==>\033[0m %s\n' "$*"; }
@@ -209,6 +210,12 @@ case "${1:-all}" in
     bootstrap_api
     bootstrap_web
     say "Local setup complete. Run scripts/dev (or npm run dev) to start both servers."
+    ;;
+  admin)
+    bootstrap_api
+    say "Creating a fresh administrator"
+    shift
+    run_artisan admin:create "$@"
     ;;
   -h|--help|help)
     usage

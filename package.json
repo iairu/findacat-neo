@@ -10,6 +10,7 @@
     "dev": "scripts/dev",
     "dev:api": "scripts/dev api",
     "dev:web": "scripts/dev web",
+    "admin": "scripts/dev admin",
     "build": "npm --prefix web run build",
     "preview": "npm --prefix web run preview"
   },

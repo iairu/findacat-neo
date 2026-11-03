@@ -9,6 +9,7 @@ From the repository root:
 ```bash
 npm run setup   # API dependencies, api/.env, APP_KEY, SQLite database, web dependencies
 npm run dev     # Laravel on :8000 + Astro on :4321
+npm run admin   # create an administrator and print email:password
 ```
 
 `npm run dev` starts both servers; Astro proxies `/api` to `localhost:8000`, so the portal, sign-in and CSRF cookies work exactly as they do in production. PHP and Composer are used when installed, otherwise the commands run through the `composer:2` Docker image. Run only one side with `npm run dev:api` or `npm run dev:web`.
