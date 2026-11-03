@@ -150,6 +150,8 @@ export const portalUi = {
     'edit.editTitle': 'Edit cat',
     'edit.savedPending': 'Saved. The cat will appear in searches once an admin approves it.',
     'edit.emsUnknown': 'Custom code: no colour name on record.',
+    'edit.typeToNarrow': '{n} more: keep typing to narrow the list.',
+    'edit.customValue': 'No match: your text will be used as typed.',
     'edit.confirmDelete': 'Delete this cat for good?',
   },
   sk: {
@@ -300,6 +302,8 @@ export const portalUi = {
     'edit.editTitle': 'Upraviť mačku',
     'edit.savedPending': 'Uložené. Mačka sa objaví vo vyhľadávaní po schválení administrátorom.',
     'edit.emsUnknown': 'Vlastný kód: v zozname nie je názov farby.',
+    'edit.typeToNarrow': 'Ešte {n}: pokračujte v písaní a zúžte zoznam.',
+    'edit.customValue': 'Žiadna zhoda: použije sa text tak, ako ste ho napísali.',
     'edit.confirmDelete': 'Naozaj natrvalo zmazať túto mačku?',
   },
 } as const satisfies Record<Locale, Record<string, string>>;

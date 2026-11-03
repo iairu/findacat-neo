@@ -55,6 +55,24 @@ function emsName(rows: Json[], breeds: Json[], code: unknown, breedCode?: unknow
   return new Set(matches.map((r) => normEms(r.english_name))).size === 1 ? String(matches[0].english_name).trim() : null;
 }
 
+/** Countries by their English name (what the API stores), with the name in the page language as a hint. */
+let countries: { en: string; local: string }[] | null = null;
+function countryList() {
+  if (countries) return countries;
+  try {
+    const en = new Intl.DisplayNames(['en'], { type: 'region' });
+    const local = new Intl.DisplayNames([locale], { type: 'region' });
+    const out: { en: string; local: string }[] = [];
+    for (let a = 65; a <= 90; a++) for (let b = 65; b <= 90; b++) {
+      const code = String.fromCharCode(a, b);
+      const name = en.of(code);
+      if (name && name !== code && !/^Unknown/.test(name)) out.push({ en: name, local: local.of(code) ?? name });
+    }
+    countries = out.sort((x, y) => x.en.localeCompare(y.en, 'en'));
+  } catch { countries = []; }
+  return countries;
+}
+
 const emsBadge = (code: string, name?: string | null) =>
   `<span class="ems ${coatClass(code)}"><span class="ems__swatch" aria-hidden="true"></span><span class="ems__code">${esc(code)}</span>${name ? ` <span class="ems__name">${esc(name)}</span>` : ''}</span>`;
 
@@ -135,13 +153,92 @@ function select(name: string, label: string, options: [string, string][], value 
     <small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
 }
 
-/** Editable dropdown: suggestions from a datalist, but any custom value may be typed. */
-function combo(name: string, label: string, options: [string, string][], value: unknown, hint?: string) {
+type ComboOption = { value: string; html: string; text: string };
+
+/** Markup of an editable dropdown (combobox); call enhanceCombo() on it afterwards to wire up the list. */
+function combo(name: string, label: string, value: unknown, hint?: string) {
   const id = 'f-' + name;
   return `<div class="field field--combo${fieldClass(name)}"><label for="${id}">${esc(label)}</label>
-    <input id="${id}" name="${name}" type="text" list="${id}-options" value="${esc(value)}" autocomplete="off" spellcheck="false">
-    <datalist id="${id}-options">${options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</datalist>
+    <div class="combobox">
+      <input id="${id}" name="${name}" type="text" value="${esc(value)}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-list" autocomplete="off" spellcheck="false">
+      <button class="combobox__toggle" type="button" tabindex="-1" aria-label="${esc(label)}"><svg viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <ul class="combobox__list" id="${id}-list" role="listbox" aria-label="${esc(label)}" hidden></ul>
+    </div>
     ${hint ? `<small>${esc(hint)}</small>` : ''}<small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
+}
+
+/**
+ * A proper dropdown over a text input: the full list opens on focus, click or arrow keys, narrows while
+ * typing, and any custom value can still be typed. Selecting fires `input` so other widgets can react.
+ */
+function enhanceCombo(root: ParentNode, name: string, getOptions: () => ComboOption[]) {
+  const box = root.querySelector<HTMLInputElement>(`#f-${name}`)!;
+  const list = root.querySelector<HTMLUListElement>(`#f-${name}-list`)!;
+  const toggle = root.querySelector<HTMLButtonElement>(`#f-${name} ~ .combobox__toggle`)!;
+  const MAX = 100;
+  let shown: ComboOption[] = [];
+  let active = -1;
+  let all: ComboOption[] = [];
+
+  const setActive = (i: number) => {
+    active = i;
+    list.querySelectorAll('[role=option]').forEach((el, n) => {
+      el.classList.toggle('is-active', n === i);
+      if (n === i) { box.setAttribute('aria-activedescendant', el.id); el.scrollIntoView({ block: 'nearest' }); }
+    });
+    if (i < 0) box.removeAttribute('aria-activedescendant');
+  };
+  const close = () => { list.hidden = true; box.setAttribute('aria-expanded', 'false'); box.removeAttribute('aria-activedescendant'); active = -1; };
+  const render = (filter: string) => {
+    const f = normEms(filter);
+    const hits = f ? all.filter((o) => normEms(o.text).includes(f)) : all;
+    shown = hits.slice(0, MAX);
+    const current = normEms(box.value);
+    list.innerHTML = shown.map((o, n) => `<li id="f-${name}-opt${n}" role="option" data-i="${n}" aria-selected="${normEms(o.value) === current}">${o.html}</li>`).join('')
+      + (hits.length > MAX ? `<li class="combobox__note" role="presentation">${esc(t('edit.typeToNarrow', { n: hits.length - MAX }))}</li>` : '')
+      + (!hits.length ? `<li class="combobox__note" role="presentation">${esc(t('edit.customValue'))}</li>` : '');
+    setActive(-1);
+  };
+  const open = (filter = '') => {
+    all = getOptions();
+    render(filter);
+    list.hidden = false;
+    box.setAttribute('aria-expanded', 'true');
+    const selected = list.querySelector('[aria-selected=true]');
+    if (selected && !filter) { setActive(Number((selected as HTMLElement).dataset.i)); }
+  };
+  const choose = (i: number) => {
+    const o = shown[i];
+    if (!o) return;
+    box.value = o.value;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    close();
+  };
+
+  box.addEventListener('focus', () => { if (list.hidden) open(); });
+  box.addEventListener('click', () => { if (list.hidden) open(); });
+  box.addEventListener('input', () => { if (document.activeElement === box) { open(box.value); } });
+  toggle.addEventListener('mousedown', (ev) => { ev.preventDefault(); if (list.hidden) { box.focus(); open(); } else close(); });
+  list.addEventListener('mousedown', (ev) => {
+    ev.preventDefault();
+    const li = (ev.target as HTMLElement).closest<HTMLElement>('[data-i]');
+    if (li) choose(Number(li.dataset.i));
+  });
+  box.addEventListener('blur', close);
+  box.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      if (list.hidden) { open(); return; }
+      const n = shown.length;
+      if (n) setActive(ev.key === 'ArrowDown' ? (active + 1) % n : (active - 1 + n) % n);
+    } else if (ev.key === 'Enter' && !list.hidden && active >= 0) {
+      ev.preventDefault();
+      choose(active);
+    } else if (ev.key === 'Escape' && !list.hidden) {
+      ev.preventDefault();
+      close();
+    } else if (ev.key === 'Tab') close();
+  });
 }
 
 /** Compact, placeholder-led fields for the cats page filter bar. */
@@ -516,23 +613,42 @@ async function catEditPage() {
   document.querySelector('h1')!.textContent = t(id ? 'edit.editTitle' : 'edit.newTitle');
   const list = (r: string) => api('GET', '/' + r).then((x) => x.data as Json[]).catch(() => [] as Json[]);
   const [breeds, emsColors] = await Promise.all([list('breeds'), list('ems')]);
-  const breedOptions = breeds.map((b): [string, string] => [b.code, b.name ?? '']);
-  const breedOf = Object.fromEntries(breeds.map((b) => [b.id, b.code]));
-  const emsOptions = emsColors.map((e): [string, string] => [e.code, [breedOf[e.breed_id], e.english_name].filter(Boolean).join(' · ')]);
+  const breedById = Object.fromEntries(breeds.map((b) => [b.id, b]));
+  const breedOptions = (): ComboOption[] => breeds.map((b) => ({
+    value: b.code, text: `${b.code} ${b.name ?? ''}`, html: `<strong>${esc(b.code)}</strong>${b.name ? ` <span class="combobox__sub">${esc(b.name)}</span>` : ''}`,
+  }));
+  const emsOptions = (): ComboOption[] => {
+    // A known breed in the breed field limits the list to that breed's colours (plus colours not tied to any breed).
+    const own = normEms((app.querySelector('#f-breed_code') as HTMLInputElement | null)?.value);
+    const known = !!own && breeds.some((b) => normEms(b.code) === own);
+    const seen = new Set<string>();
+    return emsColors.filter((e) => e.code)
+      .map((e) => ({ e, breed: breedById[e.breed_id]?.code as string | undefined }))
+      .filter(({ breed }) => !known || !breed || normEms(breed) === own)
+      .sort((x, y) => String(x.e.code).localeCompare(String(y.e.code), 'en', { numeric: true }))
+      .filter(({ e, breed }) => { const k = `${normEms(e.code)}|${normEms(e.english_name)}|${normEms(breed)}`; return !seen.has(k) && seen.add(k); })
+      .map(({ e, breed }) => ({
+        value: e.code, text: `${e.code} ${e.english_name ?? ''} ${breed ?? ''}`,
+        html: `${emsBadge(e.code, e.english_name)}${breed && !known ? ` <span class="combobox__sub">${esc(breed)}</span>` : ''}`,
+      }));
+  };
+  const countryOptions = (): ComboOption[] => countryList().map(({ en, local }) => ({
+    value: en, text: `${en} ${local}`, html: `${esc(en)}${local !== en ? ` <span class="combobox__sub">${esc(local)}</span>` : ''}`,
+  }));
+  const titleOptions = (): ComboOption[] => ['CH', 'IC', 'GIC', 'SC', 'IP', 'GIP', 'NW', 'WW', 'JW', 'DSM', 'DVM', 'DM'].map((x) => ({ value: x, text: x, html: `<strong>${x}</strong>` }));
   const emsHint = (breed: unknown, code: unknown) => {
     const name = emsName(emsColors, breeds, code, breed);
     return normEms(code) ? (name ? emsBadge(String(code).trim(), name) : `<span class="ems-hint__none">${esc(t('edit.emsUnknown'))}</span>`) : '';
   };
-  const titleOptions: [string, string][] = ['CH', 'IC', 'GIC', 'SC', 'IP', 'GIP', 'NW', 'WW', 'JW', 'DSM', 'DVM', 'DM'].map((x) => [x, '']);
   const text = (name: string, label: string, type = 'text') => input(name, label, { value: cat[name], type });
   app.innerHTML = `<form class="stack cat-form" novalidate>
       ${input('name', t('cat.fields.name'), { value: cat.name, required: true })}
       ${select('sex', t('cat.fields.sex'), [['male', t('common.male')], ['female', t('common.female')]], cat.sex ?? 'female')}
       <div id="sire-host" data-name="sire_id"></div><div id="dam-host" data-name="dam_id"></div>
       ${text('born_on', t('cat.fields.born'), 'date')}${text('died_on', t('cat.fields.died'), 'date')}
-      ${combo('title_prefix', t('cat.fields.titlePrefix'), titleOptions, cat.title_prefix)}${combo('title_suffix', t('cat.fields.titleSuffix'), titleOptions, cat.title_suffix)}
-      ${combo('breed_code', t('cat.fields.breed'), breedOptions, cat.breed_code)}${combo('ems_code', t('cat.fields.ems'), emsOptions, cat.ems_code)}${text('reg_number', t('cat.fields.reg'))}
-      ${text('breeder', t('cat.fields.breeder'))}${text('owner_name', t('cat.fields.owner'))}${text('country', t('cat.fields.country'))}
+      ${combo('title_prefix', t('cat.fields.titlePrefix'), cat.title_prefix)}${combo('title_suffix', t('cat.fields.titleSuffix'), cat.title_suffix)}
+      ${combo('breed_code', t('cat.fields.breed'), cat.breed_code)}${combo('ems_code', t('cat.fields.ems'), cat.ems_code)}${text('reg_number', t('cat.fields.reg'))}
+      ${text('breeder', t('cat.fields.breeder'))}${text('owner_name', t('cat.fields.owner'))}${combo('country', t('cat.fields.country'), cat.country)}
       ${text('chip_number', t('cat.fields.chip'))}${text('photo', t('cat.fields.photo'), 'url')}
       <div class="field"><label for="f-notes">${esc(t('cat.fields.notes'))}</label><textarea id="f-notes" name="notes" rows="4">${esc(cat.notes)}</textarea><small class="field-error" data-error-for="notes" role="alert"></small></div>
       <p class="form-error" role="alert"></p>
@@ -543,11 +659,12 @@ async function catEditPage() {
   const hint = document.createElement('small');
   hint.className = 'ems-hint';
   hint.setAttribute('aria-live', 'polite');
-  emsInput.closest('.field')!.querySelector('datalist')!.after(hint);
+  emsInput.closest('.combobox')!.after(hint);
   const refreshHint = () => { hint.innerHTML = emsHint(breedInput.value, emsInput.value); };
   emsInput.addEventListener('input', refreshHint);
   breedInput.addEventListener('input', refreshHint);
   refreshHint();
+  for (const [field, options] of [['title_prefix', titleOptions], ['title_suffix', titleOptions], ['breed_code', breedOptions], ['ems_code', emsOptions], ['country', countryOptions]] as const) enhanceCombo(app, field, options);
   const sire = picker(app.querySelector('#sire-host')!, t('cat.fields.sire'), 'male', cat.sire ?? null);
   const dam = picker(app.querySelector('#dam-host')!, t('cat.fields.dam'), 'female', cat.dam ?? null);
   const form = app.querySelector<HTMLFormElement>('form')!;
