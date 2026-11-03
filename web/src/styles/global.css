@@ -422,6 +422,32 @@ body { overflow-x: clip; }
 .facts div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding-block: 0.4rem; border-bottom: 1px solid var(--border); }
 .facts dt { color: var(--text-3); }
 .facts dd { margin: 0; }
+.fact { border-left: 3px solid var(--fact, transparent); padding-left: 0.75rem; }
+.fact dt { color: var(--fact, var(--text-3)); font-weight: 600; font-size: 0.92rem; }
+.fact dd { color: var(--text); }
+.fact--born { --fact: var(--accent); } .fact--born dd { color: var(--accent); }
+.fact--died { --fact: var(--text-3); } .fact--died dd { color: var(--text-3); }
+.fact--breed { --fact: var(--ok); } .fact--breed dd { color: var(--ok); font-weight: 600; }
+.fact--ems { --fact: var(--ems); } .fact--ems dd { color: var(--ems); font-weight: 600; }
+.fact--reg { --fact: var(--gold); } .fact--reg dd { color: var(--gold); font-family: var(--font-mono); }
+.fact--male { --fact: var(--male); } .fact--male dd, .fact--male dd a { color: var(--male); }
+.fact--female { --fact: var(--female); } .fact--female dd, .fact--female dd a { color: var(--female); }
+.fact--breeder { --fact: var(--ok); } .fact--breeder dd { color: var(--ok); }
+.fact--owner { --fact: var(--ems); } .fact--owner dd { color: var(--ems); }
+.fact--country { --fact: var(--male); } .fact--country dd { color: var(--male); }
+@media (max-width: 30rem) { .facts div { grid-template-columns: 1fr; gap: 0; } }
+
+/* Edit form: each field wears the colour of its group on the profile page. */
+.field { --fc: var(--text); }
+.field--sex { --fc: var(--male); } .field--born { --fc: var(--accent); } .field--died { --fc: var(--text-3); }
+.field--breed, .field--breeder { --fc: var(--ok); } .field--ems, .field--owner { --fc: var(--ems); }
+.field--reg { --fc: var(--gold); } .field--country { --fc: var(--male); }
+.field[class*='field--'] label { color: var(--fc); }
+.field[class*='field--'] input:not([type='checkbox']), .field[class*='field--'] select { border-left: 3px solid var(--fc); }
+.field[class*='field--'] input:focus-visible, .field[class*='field--'] select:focus-visible { outline-color: var(--fc); }
+.field--combo input[list] { background-image: linear-gradient(45deg, transparent 50%, var(--fc, var(--text-3)) 50%), linear-gradient(135deg, var(--fc, var(--text-3)) 50%, transparent 50%); background-position: calc(100% - 1.1rem) 55%, calc(100% - 0.8rem) 55%; background-size: 0.3rem 0.3rem; background-repeat: no-repeat; padding-right: 2rem; }
+.field--combo input::-webkit-calendar-picker-indicator { opacity: 0; }
+
 .cat-photo { max-width: 100%; border-radius: var(--radius); border: 1px solid var(--border); grid-column: 1 / -1; }
 
 .coi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; align-self: start; }

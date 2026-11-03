@@ -78,17 +78,33 @@ const loginPrompt = () => `<p>${esc(t('auth.needLogin'))} <a href="${href('/logi
 
 // ---------------------------------------------------------------- form helpers
 
+/** Colour group of a cat field; shared by the profile page and the edit form. */
+const FIELD_KIND: Record<string, string> = {
+  sex: 'sex', born_on: 'born', died_on: 'died', reg_number: 'reg', breed_code: 'breed', ems_code: 'ems',
+  breeder: 'breeder', owner_name: 'owner', country: 'country',
+};
+const fieldClass = (name: string) => (FIELD_KIND[name] ? ` field--${FIELD_KIND[name]}` : '');
+
 function input(name: string, label: string, opts: { type?: string; value?: unknown; required?: boolean; hint?: string; autocomplete?: string } = {}) {
   const id = 'f-' + name;
-  return `<div class="field"><label for="${id}">${esc(label)}</label>
+  return `<div class="field${fieldClass(name)}"><label for="${id}">${esc(label)}</label>
     <input id="${id}" name="${name}" type="${opts.type ?? 'text'}" value="${esc(opts.value)}"${opts.required ? ' required' : ''}${opts.autocomplete ? ` autocomplete="${opts.autocomplete}"` : ''}>
     ${opts.hint ? `<small>${esc(opts.hint)}</small>` : ''}<small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
 }
 
 function select(name: string, label: string, options: [string, string][], value = '') {
-  return `<div class="field"><label for="f-${name}">${esc(label)}</label><select id="f-${name}" name="${name}">
+  return `<div class="field${fieldClass(name)}"><label for="f-${name}">${esc(label)}</label><select id="f-${name}" name="${name}">
     ${options.map(([v, l]) => `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
     <small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
+}
+
+/** Editable dropdown: suggestions from a datalist, but any custom value may be typed. */
+function combo(name: string, label: string, options: [string, string][], value: unknown, hint?: string) {
+  const id = 'f-' + name;
+  return `<div class="field field--combo${fieldClass(name)}"><label for="${id}">${esc(label)}</label>
+    <input id="${id}" name="${name}" type="text" list="${id}-options" value="${esc(value)}" autocomplete="off" spellcheck="false">
+    <datalist id="${id}-options">${options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</datalist>
+    ${hint ? `<small>${esc(hint)}</small>` : ''}<small class="field-error" data-error-for="${name}" role="alert"></small></div>`;
 }
 
 /** Compact, placeholder-led fields for the cats page filter bar. */
@@ -249,17 +265,17 @@ async function catPage() {
     const { data: c } = await api('GET', `/cats/${encodeURIComponent(id)}`);
     document.title = catName(c) + ' · ' + document.title;
     document.querySelector('.portal__title')!.textContent = catName(c);
-    const row = (label: string, value: unknown) => (value ? `<div><dt>${esc(label)}</dt><dd>${value}</dd></div>` : '');
+    const row = (label: string, value: unknown, kind = '') => (value ? `<div class="fact${kind ? ` fact--${kind}` : ''}"><dt>${esc(label)}</dt><dd>${value}</dd></div>` : '');
     const parent = (p: Json | null, fallbackId: string | null) => (p ? `<a href="${catUrl(p.id)}">${esc(p.name)}</a>` : fallbackId ? esc(t('common.unknown')) : '');
     app.innerHTML = `
       ${c.moderation_status === 'pending' ? note('info', t('cat.pendingNote')) : ''}${c.moderation_status === 'rejected' ? note('error', t('cat.rejectedNote')) : ''}
       ${c.can_edit ? `<p><a class="btn btn--ghost" href="${href('/cat-edit/')}?id=${encodeURIComponent(c.id)}">${esc(t('common.edit'))}</a></p>` : ''}
       <div class="cat-grid">
         <dl class="facts">
-          ${row(t('cat.fields.sex'), esc(sexLabel(c.sex)))}${row(t('cat.fields.born'), esc(fmtDate(c.born_on)))}${row(t('cat.fields.died'), esc(fmtDate(c.died_on)))}
-          ${row(t('cat.fields.breed'), esc(c.breed_code))}${row(t('cat.fields.ems'), esc(c.ems_code))}${row(t('cat.fields.reg'), esc(c.reg_number))}
-          ${row(t('cat.fields.sire'), parent(c.sire, c.sire_id))}${row(t('cat.fields.dam'), parent(c.dam, c.dam_id))}
-          ${row(t('cat.fields.breeder'), esc(c.breeder))}${row(t('cat.fields.owner'), esc(c.owner_name))}${row(t('cat.fields.country'), esc(c.country))}
+          ${row(t('cat.fields.sex'), esc(sexLabel(c.sex)), c.sex === 'male' ? 'male' : c.sex === 'female' ? 'female' : '')}${row(t('cat.fields.born'), esc(fmtDate(c.born_on)), 'born')}${row(t('cat.fields.died'), esc(fmtDate(c.died_on)), 'died')}
+          ${row(t('cat.fields.breed'), esc(c.breed_code), 'breed')}${row(t('cat.fields.ems'), esc(c.ems_code), 'ems')}${row(t('cat.fields.reg'), esc(c.reg_number), 'reg')}
+          ${row(t('cat.fields.sire'), parent(c.sire, c.sire_id), 'male')}${row(t('cat.fields.dam'), parent(c.dam, c.dam_id), 'female')}
+          ${row(t('cat.fields.breeder'), esc(c.breeder), 'breeder')}${row(t('cat.fields.owner'), esc(c.owner_name), 'owner')}${row(t('cat.fields.country'), esc(c.country), 'country')}
           ${row(t('cat.fields.notes'), esc(c.notes))}
         </dl>
         <aside class="coi"><h2>${esc(t('cat.inbreeding'))}</h2><p class="coi__value">${esc(pct(c.inbreeding))}</p>
@@ -461,14 +477,20 @@ async function catEditPage() {
     } catch (e) { app.innerHTML = note('error', messageOf(e)); return; }
   }
   document.querySelector('h1')!.textContent = t(id ? 'edit.editTitle' : 'edit.newTitle');
+  const list = (r: string) => api('GET', '/' + r).then((x) => x.data as Json[]).catch(() => [] as Json[]);
+  const [breeds, emsColors] = await Promise.all([list('breeds'), list('ems')]);
+  const breedOptions = breeds.map((b): [string, string] => [b.code, b.name ?? '']);
+  const breedOf = Object.fromEntries(breeds.map((b) => [b.id, b.code]));
+  const emsOptions = emsColors.map((e): [string, string] => [e.code, [breedOf[e.breed_id], e.english_name].filter(Boolean).join(' · ')]);
+  const titleOptions: [string, string][] = ['CH', 'IC', 'GIC', 'SC', 'IP', 'GIP', 'NW', 'WW', 'JW', 'DSM', 'DVM', 'DM'].map((x) => [x, '']);
   const text = (name: string, label: string, type = 'text') => input(name, label, { value: cat[name], type });
   app.innerHTML = `<form class="stack cat-form" novalidate>
       ${input('name', t('cat.fields.name'), { value: cat.name, required: true })}
       ${select('sex', t('cat.fields.sex'), [['male', t('common.male')], ['female', t('common.female')]], cat.sex ?? 'female')}
       <div id="sire-host" data-name="sire_id"></div><div id="dam-host" data-name="dam_id"></div>
       ${text('born_on', t('cat.fields.born'), 'date')}${text('died_on', t('cat.fields.died'), 'date')}
-      ${text('title_prefix', t('cat.fields.titlePrefix'))}${text('title_suffix', t('cat.fields.titleSuffix'))}
-      ${text('breed_code', t('cat.fields.breed'))}${text('ems_code', t('cat.fields.ems'))}${text('reg_number', t('cat.fields.reg'))}
+      ${combo('title_prefix', t('cat.fields.titlePrefix'), titleOptions, cat.title_prefix)}${combo('title_suffix', t('cat.fields.titleSuffix'), titleOptions, cat.title_suffix)}
+      ${combo('breed_code', t('cat.fields.breed'), breedOptions, cat.breed_code)}${combo('ems_code', t('cat.fields.ems'), emsOptions, cat.ems_code)}${text('reg_number', t('cat.fields.reg'))}
       ${text('breeder', t('cat.fields.breeder'))}${text('owner_name', t('cat.fields.owner'))}${text('country', t('cat.fields.country'))}
       ${text('chip_number', t('cat.fields.chip'))}${text('photo', t('cat.fields.photo'), 'url')}
       <div class="field"><label for="f-notes">${esc(t('cat.fields.notes'))}</label><textarea id="f-notes" name="notes" rows="4">${esc(cat.notes)}</textarea><small class="field-error" data-error-for="notes" role="alert"></small></div>
