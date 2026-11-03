@@ -54,6 +54,8 @@ const other = locale === 'sk' ? 'en' : 'sk';
           <a class="nav-link" href={localePath(locale, '/')} aria-current={path === localePath(locale, '/').replace(/\/$/, '') || path === '/' ? 'page' : undefined}>{tr('nav.home')}</a>
           <a class="nav-link" href={localePath(locale, '/docs/')} aria-current={inDocs ? 'page' : undefined}>{tr('nav.docs')}</a>
           <a class="nav-link" href={localePath(locale, '/cats/')} aria-current={here('/cats') || here('/cat') ? 'page' : undefined}>{pt['nav.cats']}</a>
+          <a class="nav-link" href={localePath(locale, '/ems/')} aria-current={here('/ems') ? 'page' : undefined}>{pt['nav.ems']}</a>
+          <a class="nav-link" href={localePath(locale, '/breeds/')} aria-current={here('/breeds') ? 'page' : undefined}>{pt['nav.breeds']}</a>
           <a class="nav-link" href={localePath(locale, '/test-mating/')} aria-current={here('/test-mating') ? 'page' : undefined}>{pt['nav.mating']}</a>
           <a class="nav-link" href={localePath(locale, '/birthdays/')} aria-current={here('/birthdays') ? 'page' : undefined}>{pt['nav.birthdays']}</a>
           <a class="nav-link" id="account-link" href={localePath(locale, '/login/')} data-account={localePath(locale, '/account/')} data-label={pt['nav.account']}>{pt['nav.signin']}</a>

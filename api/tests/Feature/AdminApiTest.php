@@ -7,6 +7,7 @@ use App\Models\Cat;
 use App\Models\EmsColor;
 use App\Models\User;
 use App\Services\FakePedigree;
+use App\Services\ReferenceData;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -27,8 +28,29 @@ class AdminApiTest extends TestCase
         $this->actingAs($user)->postJson('/api/admin/breeds', ['code' => 'ABC'])->assertForbidden();
         $this->actingAs($user)->getJson('/api/admin/users')->assertForbidden();
         $this->actingAs($user)->postJson('/api/admin/seed/cats')->assertForbidden();
+        $this->actingAs($user)->postJson('/api/admin/seed/reference')->assertForbidden();
         $this->actingAs($user)->getJson('/api/admin/backup/cats')->assertForbidden();
         $this->actingAs($user)->deleteJson('/api/admin/backup/cats', ['confirm' => 'DELETE'])->assertForbidden();
+    }
+
+    public function test_admin_loads_every_breed_and_ems_colour_once(): void
+    {
+        $admin = $this->admin();
+        Breed::create(['code' => 'ben', 'name' => 'My own Bengal']);
+        EmsColor::create(['code' => 'N', 'english_name' => 'Jet black']);
+
+        $response = $this->actingAs($admin)->postJson('/api/admin/seed/reference')->assertCreated();
+        $this->assertSame(count(ReferenceData::BREEDS) - 1, $response->json('data.breeds'));
+        $this->assertSame(count(ReferenceData::colours()) - 1, $response->json('data.ems'));
+
+        $this->assertSame('My own Bengal', Breed::where('code', 'ben')->value('name'));
+        $this->assertSame(1, Breed::whereIn('code', ['BEN', 'ben'])->count());
+        $this->assertSame('Jet black', EmsColor::where('code', 'N')->value('english_name'));
+        $this->assertSame('Black silver mackerel tabby, bicolour', EmsColor::where('code', 'ns 03 22')->value('english_name'));
+        $this->assertSame(count(ReferenceData::colours()), count(array_unique(array_column(ReferenceData::colours(), 'code'))));
+
+        $this->actingAs($admin)->postJson('/api/admin/seed/reference')->assertCreated()
+            ->assertJsonPath('data.breeds', 0)->assertJsonPath('data.ems', 0);
     }
 
     public function test_admin_seeds_a_fake_pedigree(): void

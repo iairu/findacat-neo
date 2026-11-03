@@ -6,13 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Breed;
 use App\Models\Cat;
 use App\Models\EmsColor;
+use App\Services\EmsLookup;
 use App\Services\Inbreeding;
 use App\Services\Pedigree;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class LookupController extends Controller
 {
+    private const CATALOGUE_CATS = 12;
+
     public function breeds(): array
     {
         return ['data' => Breed::orderBy('code')->get(['id', 'code', 'name'])];
@@ -26,6 +30,49 @@ class LookupController extends Controller
         }
 
         return ['data' => $query->get(['id', 'breed_id', 'code', 'english_name'])];
+    }
+
+    /** Every EMS colour with the approved cats that carry its code. */
+    public function emsCats(): array
+    {
+        return ['data' => $this->catalogue('ems_code', EmsColor::query()->get(['code', 'english_name'])->map(fn (EmsColor $row) => [$row->code, $row->english_name]))];
+    }
+
+    /** Every breed with the approved cats of that breed. */
+    public function breedCats(): array
+    {
+        return ['data' => $this->catalogue('breed_code', Breed::query()->get(['code', 'name'])->map(fn (Breed $row) => [$row->code, $row->name]))];
+    }
+
+    /**
+     * Groups approved cats by a code column (matched the way EmsLookup does) and lists every
+     * known code even when no cat uses it. Each group carries the total and its first cats by name.
+     *
+     * @param  Collection<int, array{0: string, 1: ?string}>  $reference  Known [code, name] pairs.
+     * @return array<int, array{code: string, name: ?string, total: int, cats: Collection}>
+     */
+    private function catalogue(string $column, Collection $reference): array
+    {
+        $cats = Cat::query()->approved()->whereNotNull($column)->where($column, '!=', '')->orderBy('name')
+            ->get(['id', 'name', 'sex', 'born_on', 'breed_code', 'ems_code'])
+            ->groupBy(fn (Cat $cat) => EmsLookup::normalize($cat->{$column}));
+
+        $known = $reference->filter(fn (array $row) => EmsLookup::normalize($row[0]) !== '')
+            ->groupBy(fn (array $row) => EmsLookup::normalize($row[0]));
+
+        return $known->keys()->merge($cats->keys())->unique()
+            ->map(function (string $key) use ($known, $cats, $column) {
+                $rows = $known->get($key);
+                $group = $cats->get($key, collect());
+
+                return [
+                    'code' => $rows ? trim($rows->first()[0]) : trim($group->first()->{$column}),
+                    'name' => $rows?->map(fn (array $row) => trim((string) $row[1]))->first(fn (string $name) => $name !== ''),
+                    'total' => $group->count(),
+                    'cats' => $group->take(self::CATALOGUE_CATS)->values(),
+                ];
+            })
+            ->sortBy('code', SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
     }
 
     public function stats(): array

@@ -152,6 +152,32 @@ class CatApiTest extends TestCase
         $this->getJson("/api/test-mating?sire={$d->id}&dam={$s->id}")->assertStatus(422);
     }
 
+    public function test_ems_and_breed_catalogues_group_approved_cats_by_code(): void
+    {
+        Breed::create(['code' => 'BEN', 'name' => 'Bengal']);
+        Breed::create(['code' => 'PER', 'name' => 'Persian']);
+        EmsColor::create(['code' => 'ns 22', 'english_name' => 'Black silver spotted tabby']);
+        EmsColor::create(['code' => 'n', 'english_name' => 'Black']);
+        $this->cat('Spot', Cat::MALE, ['breed_code' => 'BEN', 'ems_code' => 'NS  22']);
+        $this->cat('Dot', Cat::FEMALE, ['breed_code' => 'ben', 'ems_code' => 'ns 22']);
+        $this->cat('Odd', Cat::FEMALE, ['breed_code' => 'XYZ', 'ems_code' => 'zz 99']);
+        $this->cat('Hidden', Cat::FEMALE, ['breed_code' => 'BEN', 'ems_code' => 'n', 'moderation_status' => 'pending']);
+
+        $ems = collect($this->getJson('/api/ems/cats')->assertOk()->json('data'))->keyBy('code');
+        $this->assertSame(['n', 'ns 22', 'zz 99'], $ems->keys()->all());
+        $this->assertSame(2, $ems['ns 22']['total']);
+        $this->assertSame('Black silver spotted tabby', $ems['ns 22']['name']);
+        $this->assertSame(['Dot', 'Spot'], array_column($ems['ns 22']['cats'], 'name'));
+        $this->assertSame(0, $ems['n']['total']);
+        $this->assertNull($ems['zz 99']['name']);
+
+        $breeds = collect($this->getJson('/api/breeds/cats')->assertOk()->json('data'))->keyBy('code');
+        $this->assertSame(['BEN', 'PER', 'XYZ'], $breeds->keys()->all());
+        $this->assertSame(2, $breeds['BEN']['total']);
+        $this->assertSame('Bengal', $breeds['BEN']['name']);
+        $this->assertSame(0, $breeds['PER']['total']);
+    }
+
     public function test_birthdays_lists_upcoming_cats(): void
     {
         $this->travelTo('2026-10-25');

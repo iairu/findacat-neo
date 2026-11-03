@@ -44,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/breeds', [LookupController::class, 'breeds']);
 Route::get('/ems', [LookupController::class, 'ems']);
+Route::get('/ems/cats', [LookupController::class, 'emsCats']);
+Route::get('/breeds/cats', [LookupController::class, 'breedCats']);
 Route::get('/stats', [LookupController::class, 'stats']);
 Route::get('/birthdays', [LookupController::class, 'birthdays']);
 Route::get('/test-mating', [LookupController::class, 'testMating']);
@@ -76,6 +78,7 @@ Route::middleware(['auth:sanctum', 'verified', 'can:admin'])->prefix('admin')->g
     Route::patch('/users/{user}', [AdminUserController::class, 'update']);
 
     Route::post('/seed/cats', [AdminSeedController::class, 'cats']);
+    Route::post('/seed/reference', [AdminSeedController::class, 'reference']);
 
     Route::get('/backup/{table}', [AdminBackupController::class, 'export']);
     Route::post('/backup/{table}', [AdminBackupController::class, 'import']);

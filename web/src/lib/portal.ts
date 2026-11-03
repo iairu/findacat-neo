@@ -250,6 +250,18 @@ function compactInput(name: string, label: string, opts: { type?: string; value?
   </div>`;
 }
 
+/** Compact editable dropdown for a subheader; call enhanceCombo() on it afterwards. */
+function compactCombo(name: string, label: string, value: unknown) {
+  const id = 'f-' + name;
+  return `<div class="subbar__field">
+    <label class="sr-only" for="${id}">${esc(label)}</label>
+    <div class="combobox">
+      <input id="${id}" name="${name}" type="text" value="${esc(value)}" placeholder="${esc(label)}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-list" autocomplete="off" spellcheck="false">
+      <button class="combobox__toggle" type="button" tabindex="-1" aria-label="${esc(label)}"><svg viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <ul class="combobox__list" id="${id}-list" role="listbox" aria-label="${esc(label)}" hidden></ul>
+    </div></div>`;
+}
+
 function compactSelect(name: string, label: string, options: [string, string][], value = '') {
   const id = 'f-' + name;
   return `<div class="subbar__field">
@@ -293,7 +305,7 @@ function onSubmit(form: HTMLFormElement, handler: (data: Record<string, string>)
 
 function pedigreeNode(n: Json | null, depth: number): string {
   if (!n) return `<div class="ped-branch"><div class="ped-node ped-node--empty">${esc(t('common.unknown'))}</div></div>`;
-  const meta = [n.ems_code, fmtDate(n.born_on)].filter(Boolean).join(' · ');
+  const meta = [n.breed_code, n.ems_code, fmtDate(n.born_on)].filter(Boolean).join(' · ');
   const parents = n.sire || n.dam ? `<div class="ped-parents">${pedigreeNode(n.sire, depth + 1)}${pedigreeNode(n.dam, depth + 1)}</div>` : '';
   return `<div class="ped-branch"><a class="ped-node ped-node--${esc(n.sex)}" href="${catUrl(n.id)}"><strong>${esc(catName(n))}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</a>${parents}</div>`;
 }
@@ -321,7 +333,7 @@ function picker(host: HTMLElement, label: string, sex: 'male' | 'female', initia
       try {
         const res = await api('GET', '/cats' + query({ q: box.value.trim(), sex, per_page: 8 }));
         list.innerHTML = res.data.length
-          ? res.data.map((c: Json) => `<li><button type="button" data-id="${esc(c.id)}" data-name="${esc(c.name)}">${esc(catName(c))}<small>${esc([c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</small></button></li>`).join('')
+          ? res.data.map((c: Json) => `<li><button type="button" data-id="${esc(c.id)}" data-name="${esc(c.name)}">${esc(catName(c))}<small>${esc([c.breed_code, c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</small></button></li>`).join('')
           : `<li class="picker__none">${esc(t('common.empty'))}</li>`;
         list.hidden = false;
       } catch { list.hidden = true; }
@@ -340,12 +352,45 @@ function picker(host: HTMLElement, label: string, sex: 'male' | 'female', initia
 
 // ---------------------------------------------------------------- pages
 
+/** The EMS and Breeds pages: every code with the cats assigned to it, filterable, with a link to the full search. */
+async function catalogPage(kind: 'ems' | 'breeds') {
+  const isEms = kind === 'ems';
+  subheader(`<form class="subbar" role="search" aria-label="${esc(t(isEms ? 'catalog.emsTitle' : 'catalog.breedsTitle'))}">
+      ${compactInput('filter', t('catalog.filter'), { value: params.get('filter'), className: 'subbar__field--grow' })}
+      <label class="subbar__check"><input type="checkbox" name="unused" value="1"${params.get('unused') ? ' checked' : ''}> ${esc(t('catalog.showUnused'))}</label></form>`);
+  app.innerHTML = `<p>${esc(t('common.loading'))}</p>`;
+  let groups: Json[];
+  try { groups = (await api('GET', isEms ? '/ems/cats' : '/breeds/cats')).data; } catch (e) { app.innerHTML = note('error', messageOf(e)); return; }
+  const form = sub.querySelector<HTMLFormElement>('form')!;
+  const filter = form.querySelector<HTMLInputElement>('[name=filter]')!;
+  const unused = form.querySelector<HTMLInputElement>('[name=unused]')!;
+  const field = isEms ? 'ems_code' : 'breed_code';
+
+  const head = (g: Json) => isEms ? emsBadge(g.code, g.name) : `<strong>${esc(g.code)}</strong>${g.name ? ` <span class="combobox__sub">${esc(g.name)}</span>` : ''}`;
+  const draw = () => {
+    const f = normEms(filter.value);
+    const shown = groups.filter((g) => (unused.checked || g.total > 0) && (!f || normEms(`${g.code} ${g.name ?? ''}`).includes(f)));
+    app.innerHTML = shown.length ? `<p class="count">${esc(t('catalog.count', { n: shown.length }))}</p><div class="catalog">${shown.map((g) => {
+      const summary = `<span class="catalog__head">${head(g)}</span><span class="catalog__total">${esc(t('catalog.cats', { n: g.total }))}</span>`;
+      if (!g.total) return `<div class="catalog__group catalog__group--empty"><div class="catalog__summary">${summary}</div></div>`;
+      const more = g.total > g.cats.length ? `<a class="btn btn--ghost" href="${href('/cats/')}${query({ [field]: g.code, exact: 1 })}">${esc(t('catalog.showAll', { n: g.total }))}</a>` : '';
+      return `<details class="catalog__group"><summary class="catalog__summary">${summary}</summary>
+        <ul class="catalog__cats">${g.cats.map((c: Json) => `<li><a href="${catUrl(c.id)}"><strong>${esc(c.name)}</strong><small>${esc([isEms ? c.breed_code : c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</small></a></li>`).join('')}</ul>${more}</details>`;
+    }).join('')}</div>` : `<p class="empty">${esc(t('common.empty'))}</p>`;
+  };
+  form.addEventListener('submit', (ev) => ev.preventDefault());
+  filter.addEventListener('input', draw);
+  unused.addEventListener('change', draw);
+  draw();
+}
+
 async function catsPage() {
   const sexOptions: [string, string][] = [['', t('cats.anySex')], ['male', t('common.male')], ['female', t('common.female')]];
   subheader(`<form class="subbar" role="search" aria-label="${esc(t('cats.title'))}">
         ${compactInput('q', t('cats.name'), { value: params.get('q'), className: 'subbar__field--grow' })}
         ${compactSelect('sex', t('cat.fields.sex'), sexOptions, params.get('sex') ?? '')}
-        ${compactInput('ems_code', t('cat.fields.ems'), { value: params.get('ems_code') })}
+        ${compactCombo('breed_code', t('cat.fields.breed'), params.get('breed_code'))}
+        ${compactCombo('ems_code', t('cat.fields.ems'), params.get('ems_code'))}
         ${compactInput('born', t('cat.fields.born'), { type: 'text', value: params.get('born'), hint: 'YYYY, YYYY-MM, YYYY-MM-DD' })}
         ${compactInput('reg_number', t('cat.fields.reg'), { value: params.get('reg_number') })}
         <label class="subbar__check"><input type="checkbox" name="exact" value="1"${params.get('exact') ? ' checked' : ''}> ${esc(t('cats.exact'))}</label>
@@ -354,6 +399,19 @@ async function catsPage() {
       </form>`);
   app.innerHTML = `<div id="results" aria-live="polite"></div>`;
   const form = sub.querySelector<HTMLFormElement>('form')!;
+  let emsRows: Json[] | null = null;
+  enhanceCombo(sub, 'ems_code', () => {
+    const seen = new Set<string>();
+    return (emsRows ?? []).filter((e) => e.code).sort((x, y) => String(x.code).localeCompare(String(y.code), 'en', { numeric: true }))
+      .filter((e) => { const k = `${normEms(e.code)}|${normEms(e.english_name)}`; return !seen.has(k) && seen.add(k); })
+      .map((e) => ({ value: e.code, text: `${e.code} ${e.english_name ?? ''}`, html: emsBadge(e.code, e.english_name) }));
+  });
+  api('GET', '/ems').then((r) => { emsRows = r.data; }).catch(() => { emsRows = []; });
+  let breedRows: Json[] = [];
+  enhanceCombo(sub, 'breed_code', () => breedRows.filter((b) => b.code).map((b) => ({
+    value: b.code, text: `${b.code} ${b.name ?? ''}`, html: `<strong>${esc(b.code)}</strong>${b.name ? ` <span class="combobox__sub">${esc(b.name)}</span>` : ''}`,
+  })));
+  api('GET', '/breeds').then((r) => { breedRows = r.data; }).catch(() => { breedRows = []; });
   const results = app.querySelector<HTMLElement>('#results')!;
   const cards = (data: Json[]) => `<ul class="cat-cards">${data.map((c: Json) => catCard(c)).join('')}</ul>`;
 
@@ -385,7 +443,7 @@ async function catsPage() {
     if (b) run(Number(b.dataset.go));
   });
   form.addEventListener('submit', (ev) => { ev.preventDefault(); run(1); });
-  const hasSearch = ['q', 'sex', 'ems_code', 'born', 'reg_number'].some((key) => params.get(key));
+  const hasSearch = ['q', 'sex', 'breed_code', 'ems_code', 'born', 'reg_number'].some((key) => params.get(key));
   if (hasSearch) run(Number(params.get('page') ?? 1));
   else loadRandom();
 }
@@ -567,27 +625,21 @@ async function accountPage() {
   const user = await me();
   if (!user) { app.innerHTML = loginPrompt(); return; }
   const statusLabel = (s: string) => t('status.' + s);
-  subheader(`<form class="subbar" id="profile" aria-label="${esc(t('account.title'))}" novalidate>
-      ${compactInput('name', t('auth.name'), { type: 'text', value: user.name, required: true, autocomplete: 'name', className: 'subbar__field--grow' })}
-      ${compactSelect('locale', t('auth.language'), [['en', 'English'], ['sk', 'Slovenčina']], user.locale)}
-      <button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button><span class="subbar__status" id="saved" role="status"></span>
-      <p class="form-error" role="alert"></p></form>`);
+  subheader(`<nav class="subbar" aria-label="${esc(t('account.title'))}">
+    <a class="btn btn--ghost" href="${href('/account-edit/')}">${esc(t('account.edit'))}</a>
+    ${user.is_admin ? `<a class="btn btn--ghost" href="${href('/admin/')}">${esc(t('nav.admin'))}</a>` : ''}
+    <button class="btn btn--ghost subbar__push" id="logout" type="button">${esc(t('auth.logout'))}</button></nav>`);
   app.innerHTML = `${params.get('verified') ? note('ok', t('auth.verifiedNow')) : ''}
     ${user.verified ? '' : `<div class="notice notice--info">${esc(t('auth.verifyNotice'))} <button class="btn btn--ghost" id="resend" type="button">${esc(t('auth.verifyResend'))}</button><span id="resend-out"></span></div>`}
     <p class="lead">${esc(user.name)} · ${esc(user.email)}</p>
-    <p class="row">${user.is_admin ? `<a class="btn btn--ghost" href="${href('/admin/')}">${esc(t('nav.admin'))}</a>` : ''}<button class="btn btn--ghost" id="logout" type="button">${esc(t('auth.logout'))}</button></p>
     <section id="mine"></section>`;
   app.querySelector('#resend')?.addEventListener('click', async () => {
     try { await api('POST', '/email/resend'); app.querySelector('#resend-out')!.textContent = ' ' + t('auth.verifySent'); } catch (e) { app.querySelector('#resend-out')!.textContent = ' ' + messageOf(e); }
   });
-  app.querySelector('#logout')!.addEventListener('click', async () => {
+  sub.querySelector('#logout')!.addEventListener('click', async () => {
     await api('POST', '/logout').catch(() => {});
     setHint(null);
     location.href = href('/');
-  });
-  onSubmit(sub.querySelector('#profile')!, async (d) => {
-    await api('PATCH', '/user', d);
-    sub.querySelector('#saved')!.textContent = t('account.saved');
   });
   const mine = app.querySelector<HTMLElement>('#mine')!;
   if (!user.verified) return;
@@ -596,6 +648,22 @@ async function accountPage() {
     mine.innerHTML = `<div class="section-bar"><h2>${esc(t('account.myCats'))}</h2><a class="btn btn--primary" href="${href('/cat-edit/')}">${esc(t('account.addCat'))}</a></div>`
       + (data.length ? `<ul class="cat-list">${data.map((c: Json) => `<li><a href="${catUrl(c.id)}"><strong>${esc(catName(c))}</strong><span>${esc(statusLabel(c.moderation_status))}</span></a></li>`).join('')}</ul>` : `<p class="empty">${esc(t('account.noCats'))}</p>`);
   } catch (e) { mine.innerHTML = note('error', messageOf(e)); }
+}
+
+async function accountEditPage() {
+  const user = await me();
+  if (!user) { app.innerHTML = loginPrompt(); return; }
+  subheader(`<nav class="subbar" aria-label="${esc(t('account.edit'))}">
+    <a class="btn btn--ghost subbar__back" href="${href('/account/')}"><span aria-hidden="true">‹</span> ${esc(t('account.back'))}</a></nav>`);
+  app.innerHTML = `<form class="stack" id="profile" novalidate>${input('name', t('auth.name'), { value: user.name, required: true, autocomplete: 'name' })}
+    ${select('locale', t('auth.language'), [['en', 'English'], ['sk', 'Slovenčina']], user.locale)}
+    <p class="form-error" role="alert"></p><div class="row"><button class="btn btn--primary" type="submit">${esc(t('common.save'))}</button><span class="subbar__status" id="saved" role="status"></span></div></form>`;
+  const saved = app.querySelector<HTMLElement>('#saved')!;
+  onSubmit(app.querySelector('#profile')!, async (d) => {
+    saved.textContent = '';
+    await api('PATCH', '/user', d);
+    saved.textContent = t('account.saved');
+  });
 }
 
 async function catEditPage() {
@@ -620,12 +688,16 @@ async function catEditPage() {
   const emsOptions = (): ComboOption[] => {
     // A known breed in the breed field limits the list to that breed's colours (plus colours not tied to any breed).
     const own = normEms((app.querySelector('#f-breed_code') as HTMLInputElement | null)?.value);
-    const known = !!own && breeds.some((b) => normEms(b.code) === own);
+    const rows = emsColors.filter((e) => e.code).map((e) => ({ e, breed: breedById[e.breed_id]?.code as string | undefined }));
+    const forBreed = rows.filter(({ breed }) => !breed || normEms(breed) === own);
+    // Colours with no breed belong to every breed; if the breed has none at all, offer everything rather than an empty list.
+    const known = !!own && breeds.some((b) => normEms(b.code) === own) && forBreed.length > 0;
+    // The selected breed's own colours come first, then the generic ones, then (only with no known breed) other breeds' colours.
+    const rank = (breed?: string) => (breed && normEms(breed) === own ? 0 : !breed ? 1 : 2);
     const seen = new Set<string>();
-    return emsColors.filter((e) => e.code)
-      .map((e) => ({ e, breed: breedById[e.breed_id]?.code as string | undefined }))
+    return rows
       .filter(({ breed }) => !known || !breed || normEms(breed) === own)
-      .sort((x, y) => String(x.e.code).localeCompare(String(y.e.code), 'en', { numeric: true }))
+      .sort((x, y) => rank(x.breed) - rank(y.breed) || String(x.e.code).localeCompare(String(y.e.code), 'en', { numeric: true }))
       .filter(({ e, breed }) => { const k = `${normEms(e.code)}|${normEms(e.english_name)}|${normEms(breed)}`; return !seen.has(k) && seen.add(k); })
       .map(({ e, breed }) => ({
         value: e.code, text: `${e.code} ${e.english_name ?? ''} ${breed ?? ''}`,
@@ -693,14 +765,17 @@ async function adminPage() {
   if (!user.is_admin) { app.innerHTML = note('error', t('admin.forbidden')); return; }
 
   const tabs: Record<string, () => Promise<void>> = { queue: queueTab, breeds: breedsTab, ems: emsTab, users: usersTab, backup: backupTab };
-  app.innerHTML = `<div class="tabs" role="tablist">${Object.keys(tabs).map((k) => `<button class="btn btn--ghost" role="tab" data-tab="${k}">${esc(t('admin.tab.' + k))}</button>`).join('')}</div><div id="panel"></div>`;
+  subheader(`<nav class="subbar" aria-label="${esc(t('nav.admin'))}">
+    <a class="btn btn--ghost subbar__back" href="${href('/account/')}"><span aria-hidden="true">‹</span> ${esc(t('admin.back'))}</a>
+    <div class="subbar__tabs" role="tablist">${Object.keys(tabs).map((k) => `<button class="btn btn--ghost" role="tab" data-tab="${k}">${esc(t('admin.tab.' + k))}</button>`).join('')}</div></nav>`);
+  app.innerHTML = `<div id="panel"></div>`;
   const panel = app.querySelector<HTMLElement>('#panel')!;
   const open = async (key: string) => {
-    app.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === key)));
+    sub.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === key)));
     panel.innerHTML = '';
     try { await tabs[key](); } catch (e) { panel.innerHTML = note('error', messageOf(e)); }
   };
-  app.querySelector('.tabs')!.addEventListener('click', (ev) => {
+  sub.querySelector('.subbar__tabs')!.addEventListener('click', (ev) => {
     const b = (ev.target as HTMLElement).closest<HTMLElement>('[data-tab]');
     if (b) { history.replaceState(null, '', '#' + b.dataset.tab); open(b.dataset.tab!); }
   });
@@ -780,8 +855,8 @@ async function adminPage() {
   async function backupTab() {
     panel.innerHTML = `<p class="lead">${esc(t('admin.backupLead'))}</p>`
       + TABLES.map((tb) => `<section class="backup" data-table="${tb}"><h2>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h2>
-        <p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a>${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : ''}</p>
-        ${tb === 'cats' ? `<div class="import-out" data-seed-out aria-live="polite"></div>` : ''}
+        <p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a>${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : ''}${tb === 'breeds' ? `<button class="btn btn--ghost" type="button" data-reference>${esc(t('admin.loadReference'))}</button>` : ''}</p>
+        ${tb === 'cats' ? `<div class="import-out" data-seed-out aria-live="polite"></div>` : ''}${tb === 'breeds' ? `<div class="import-out" data-reference-out aria-live="polite"></div>` : ''}
         <form class="stack" data-import novalidate><div class="field"><label for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
           <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></section>`).join('')
       + `<section class="danger"><h2>${esc(t('admin.danger'))}</h2><p>${esc(t('admin.clearLead'))}</p>
@@ -798,6 +873,19 @@ async function adminPage() {
         panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e)));
       } finally {
         seed.disabled = false;
+      }
+    });
+
+    const reference = panel.querySelector<HTMLButtonElement>('[data-reference]');
+    reference?.addEventListener('click', async () => {
+      reference.disabled = true;
+      try {
+        const { data } = await api('POST', '/admin/seed/reference');
+        panel.querySelector<HTMLElement>('[data-reference-out]')!.innerHTML = note('ok', t('admin.referenceLoaded', { breeds: data.breeds, ems: data.ems }));
+      } catch (e) {
+        panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e)));
+      } finally {
+        reference.disabled = false;
       }
     });
 
@@ -822,8 +910,8 @@ async function adminPage() {
 }
 
 const pages: Record<string, () => void | Promise<void>> = {
-  cats: catsPage, cat: catPage, 'test-mating': matingPage, birthdays: birthdaysPage,
+  cats: catsPage, ems: () => catalogPage('ems'), breeds: () => catalogPage('breeds'), cat: catPage, 'test-mating': matingPage, birthdays: birthdaysPage,
   login: loginPage, register: registerPage, 'forgot-password': forgotPage, 'reset-password': resetPage,
-  account: accountPage, 'cat-edit': catEditPage, admin: adminPage,
+  account: accountPage, 'account-edit': accountEditPage, 'cat-edit': catEditPage, admin: adminPage,
 };
 pages[page]?.();
