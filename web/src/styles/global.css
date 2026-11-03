@@ -667,3 +667,6 @@ a.ped-node:hover { border-color: var(--accent); color: var(--text); }
 :root[data-theme='dark'] .btn--danger { color: #ff9b92; }
 .btn--danger:hover { background: color-mix(in srgb, #c0392b 12%, var(--surface)); }
 .backup { margin: 0; padding: 1.25rem; border-top: 1px solid var(--border); }
+
+.seed-count { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; }
+.seed-count input { width: 5.5rem; }

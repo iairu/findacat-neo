@@ -57,16 +57,16 @@ class AdminApiTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson('/api/admin/seed/cats')
+        $this->actingAs($admin)->postJson('/api/admin/seed/cats', ['count' => 50])
             ->assertCreated()
-            ->assertJsonPath('data.cats', FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION)
+            ->assertJsonPath('data.cats', 50)
             ->assertJsonPath('data.breeds', 6)
             ->assertJsonPath('data.ems', 6);
 
         $cats = Cat::all()->keyBy('id');
 
-        $this->assertCount(FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION, $cats);
-        $this->assertSame(FakePedigree::PER_GENERATION, $cats->whereNull('sire_id')->count());
+        $this->assertCount(50, $cats);
+        $this->assertSame(intdiv(50, FakePedigree::generationsFor(50)), $cats->whereNull('sire_id')->count());
         $this->assertSame(6, Breed::count());
         $this->assertSame(6, EmsColor::count());
 
@@ -109,11 +109,20 @@ class AdminApiTest extends TestCase
         // A second run adds more cats but reuses the breeds and colours that now exist.
         $this->actingAs($admin)->postJson('/api/admin/seed/cats')
             ->assertCreated()
-            ->assertJsonPath('data.cats', FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION)
+            ->assertJsonPath('data.cats', FakePedigree::DEFAULT_CATS)
             ->assertJsonPath('data.breeds', 0)
             ->assertJsonPath('data.ems', 0);
         $this->assertSame(6, Breed::count());
         $this->assertSame(6, EmsColor::count());
+    }
+
+    public function test_seeding_rejects_a_cat_count_outside_the_allowed_range(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->postJson('/api/admin/seed/cats', ['count' => FakePedigree::MIN_CATS - 1])->assertUnprocessable();
+        $this->actingAs($admin)->postJson('/api/admin/seed/cats', ['count' => FakePedigree::MAX_CATS + 1])->assertUnprocessable();
+        $this->assertSame(0, Cat::count());
     }
 
     public function test_admin_manages_breeds_and_ems_colours(): void

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Builds a small, self-contained pedigree for demos and manual testing.
+ * Builds a self-contained pedigree of a chosen size for demos and manual testing.
  *
  * Founders are created first and every later generation only points at the generation
  * before it, so the result can never contain an ancestry cycle. Every column that the
@@ -19,9 +19,17 @@ use Illuminate\Support\Str;
  */
 class FakePedigree
 {
-    public const GENERATIONS = 4;
+    public const MIN_CATS = 8;
 
-    public const PER_GENERATION = 6;
+    public const MAX_CATS = 300;
+
+    public const DEFAULT_CATS = 60;
+
+    /** Few cats keep four generations; larger runs grow deeper so every generation stays a manageable size. */
+    public static function generationsFor(int $cats): int
+    {
+        return max(4, min(8, intdiv($cats, 12)));
+    }
 
     private const CATTERIES = ['Amberwhisker', 'Velvet Paw', 'Moonlynx', 'Silver Purr', 'Willow Song', 'Sunny Side'];
 
@@ -61,15 +69,21 @@ class FakePedigree
     ];
 
     /**
+     * @param  int  $cats  How many cats to create, clamped to MIN_CATS..MAX_CATS.
      * @return array{cats: int, breeds: int, ems: int}
      */
-    public function seed(): array
+    public function seed(int $cats = self::DEFAULT_CATS): array
     {
-        return DB::transaction(function (): array {
+        $cats = max(self::MIN_CATS, min(self::MAX_CATS, $cats));
+        $generationCount = self::generationsFor($cats);
+        $base = intdiv($cats, $generationCount);
+        $extra = $cats - $base * $generationCount;
+
+        return DB::transaction(function () use ($generationCount, $base, $extra): array {
             $created = ['cats' => 0, 'breeds' => 0, 'ems' => 0];
             [$breeds, $ems] = $this->lookups($created);
 
-            $fake = fake();
+            $fake = new FakeData;
             $batch = strtoupper(Str::random(5));
             $sequence = 0;
             $sires = collect();
@@ -77,14 +91,16 @@ class FakePedigree
             $generations = [];
             $lastChildBorn = [];
             // Start far enough back that the last generation is a few years old.
-            $start = now()->subYears((self::GENERATIONS - 1) * 3 + 3)->startOfYear();
+            $start = now()->subYears(($generationCount - 1) * 3 + 3)->startOfYear();
 
-            for ($generation = 0; $generation < self::GENERATIONS; $generation++) {
+            for ($generation = 0; $generation < $generationCount; $generation++) {
+                // The remainder goes to the youngest generations.
+                $size = $base + ($generation >= $generationCount - $extra ? 1 : 0);
                 $males = collect();
                 $females = collect();
                 $bornFrom = $start->copy()->addYears($generation * 3);
 
-                for ($i = 0; $i < self::PER_GENERATION; $i++) {
+                for ($i = 0; $i < $size; $i++) {
                     $sex = $i % 2 === 0 ? Cat::MALE : Cat::FEMALE;
                     $born = $bornFrom->copy()->addDays($fake->numberBetween(0, 364));
                     $sireId = $generation === 0 ? null : $sires->random()->id;
@@ -167,7 +183,7 @@ class FakePedigree
      */
     private function burySome(array $generations, array $lastChildBorn): void
     {
-        $fake = fake();
+        $fake = new FakeData;
 
         foreach ([0 => 35, 1 => 20] as $generation => $chance) {
             foreach ($generations[$generation] ?? [] as $cat) {

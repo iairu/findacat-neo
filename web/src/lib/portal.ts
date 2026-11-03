@@ -988,7 +988,7 @@ async function adminPage() {
           <div class="admin-step"><h4>${esc(t('admin.restore'))}</h4>
             <form class="stack" data-import novalidate><div class="field"><label class="sr-only" for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
               <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></div>
-          ${tb === 'cats' || tb === 'breeds' ? `<div class="admin-step"><h4>${esc(t('admin.sampleData'))}</h4><p class="row">${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : `<button class="btn btn--ghost" type="button" data-reference>${esc(t('admin.loadReference'))}</button>`}</p>
+          ${tb === 'cats' || tb === 'breeds' ? `<div class="admin-step"><h4>${esc(t('admin.sampleData'))}</h4><p class="row">${tb === 'cats' ? `<label class="seed-count">${esc(t('admin.seedCount'))} <input type="number" name="count" min="8" max="300" value="60" inputmode="numeric" data-seed-count></label><button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : `<button class="btn btn--ghost" type="button" data-reference>${esc(t('admin.loadReference'))}</button>`}</p>
             <div class="import-out" ${tb === 'cats' ? 'data-seed-out' : 'data-reference-out'} aria-live="polite"></div></div>` : ''}</section>`).join('')}</div>
       <section class="admin-card danger"><h3>${esc(t('admin.danger'))}</h3><p class="admin-card__lead">${esc(t('admin.clearLead'))}</p>
         <div class="danger__rows">${TABLES.map((tb) => `<form class="danger__row" data-clear="${tb}" novalidate><span class="danger__name">${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</span><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost btn--danger" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</div></section>`;
@@ -998,7 +998,8 @@ async function adminPage() {
       if (!confirm(t('admin.seedConfirm'))) return;
       seed.disabled = true;
       try {
-        const { data } = await api('POST', '/admin/seed/cats');
+        const count = Math.max(8, Math.min(300, Math.round(Number(panel.querySelector<HTMLInputElement>('[data-seed-count]')?.value) || 60)));
+        const { data } = await api('POST', '/admin/seed/cats', { count });
         panel.querySelector<HTMLElement>('[data-seed-out]')!.innerHTML = note('ok', t('admin.seeded', { cats: data.cats }));
       } catch (e) {
         panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e)));
