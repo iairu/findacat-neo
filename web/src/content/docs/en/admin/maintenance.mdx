@@ -25,7 +25,7 @@ Each of cats, breeds and EMS colours can be downloaded as a CSV file and importe
 - **Importing updates rows with the same id and never deletes anything.** Re-importing a backup after a mistake restores the rows in it.
 - Cat exports also carry the owner and approval status. They are restored when present, so a backup brings cats back published or waiting as they were.
 - Parent links that point to an unknown cat, impossible dates and loops in a pedigree are not fatal: the row is imported, the bad value is cleared and a warning is listed (the first 200).
-- **Seed fake pedigree:** adds 24 generated cats in four generations, plus a few breeds and EMS colours when those tables are empty. For testing only; remove them again in the danger zone.
+- **Seed fake pedigree:** adds 24 generated cats in four generations, with full profiles and placeholder photos, plus a few breeds and EMS colours when those tables are empty. For testing only; remove them again in the danger zone.
 - **Danger zone:** deletes every row of one table. Type `DELETE` to confirm. Download a backup first.
 
 Make a backup before every upgrade. For a full copy of the data also export the database from cPanel (phpMyAdmin), which includes user accounts that the CSV files do not.

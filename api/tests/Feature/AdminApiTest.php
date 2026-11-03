@@ -50,6 +50,26 @@ class AdminApiTest extends TestCase
 
         foreach ($cats as $cat) {
             $this->assertSame('approved', $cat->moderation_status);
+            $this->assertStringStartsWith('https://placecats.com/', $cat->photo);
+            $this->assertNotEmpty($cat->print_name_1);
+            $this->assertNotEmpty($cat->print_name_2);
+            $this->assertNotEmpty($cat->reg_number);
+            $this->assertNotEmpty($cat->chip_number);
+            $this->assertNotEmpty($cat->breeder);
+            $this->assertNotEmpty($cat->owner_name);
+            $this->assertNotEmpty($cat->country);
+            $this->assertNotEmpty($cat->country_of_origin);
+            $this->assertNotEmpty($cat->notes);
+            $this->assertNotEmpty($cat->metadata['doo'] ?? null);
+
+            if ($cat->genetic_tests !== null) {
+                $this->assertNotEmpty($cat->genetic_tests_file);
+            }
+
+            if ($cat->died_on !== null) {
+                $this->assertTrue($cat->born_on->lt($cat->died_on));
+                $this->assertArrayHasKey('cemetery', $cat->metadata);
+            }
 
             if ($cat->sire_id !== null) {
                 $sire = $cats[$cat->sire_id];
