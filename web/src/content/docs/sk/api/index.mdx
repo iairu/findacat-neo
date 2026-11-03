@@ -26,7 +26,7 @@ Chyby používajú štandardné stavové kódy. Neplatný vstup vracia `422` s `
 | `GET /breeds`, `GET /ems` | Referenčné zoznamy (`/ems` prijíma `breed_id`) |
 | `GET /stats` | Počty mačiek (spolu, samce, samice, žijúce, uhynuté, s fotografiou) |
 
-Vo verejných výsledkoch sú len schválené mačky. Koeficient `inbreeding` je zlomok medzi 0 a 1.
+Vo verejných výsledkoch sú len schválené mačky. Každý výsledok hľadania obsahuje aj `photo`, tituly, `breed_code`, `ems_code`, `born_on`, `died_on`, `reg_number`, `breeder`, `owner_name` a `country`. Koeficient `inbreeding` je zlomok medzi 0 a 1.
 
 ## Účty
 

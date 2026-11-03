@@ -20,6 +20,40 @@ const sexLabel = (s?: string | null) => (s === 'male' ? t('common.male') : s ===
 const catUrl = (id: string) => href(`/cat/?id=${encodeURIComponent(id)}`);
 const catName = (c: Json) => [c.title_prefix, c.name, c.title_suffix].filter(Boolean).join(' ');
 
+const catCard = (c: Json) => {
+  const titles = [c.title_prefix, c.title_suffix].filter(Boolean).join(' ');
+  const deceased = Boolean(c.died_on);
+  const sexClass = c.sex === 'male' ? 'cat-card--male' : c.sex === 'female' ? 'cat-card--female' : '';
+  const classes = ['cat-card', sexClass, deceased ? 'cat-card--deceased' : '', titles ? 'cat-card--titled' : ''].filter(Boolean).join(' ');
+  const sexSymbol = c.sex === 'male' ? '♂' : c.sex === 'female' ? '♀' : '';
+  const fact = (label: string, value: unknown, kind: string) => (value
+    ? `<div class="cat-card__fact cat-card__fact--${kind}"><dt>${esc(label)}</dt><dd title="${esc(value)}">${esc(value)}</dd></div>` : '');
+  return `<li class="${classes}"><a class="cat-card__link" href="${catUrl(c.id)}">
+    <div class="cat-card__media">
+      ${c.photo ? `<img class="cat-card__photo" src="${esc(c.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-card__placeholder" aria-hidden="true">🐾</div>`}
+      <div class="cat-card__badges">
+        ${c.sex ? `<span class="cat-card__badge cat-card__badge--${esc(c.sex)}"><span aria-hidden="true">${sexSymbol}</span> ${esc(sexLabel(c.sex))}</span>` : ''}
+        ${titles ? `<span class="cat-card__badge cat-card__badge--titled"><span aria-hidden="true">★</span> ${esc(titles)}</span>` : ''}
+        ${deceased ? `<span class="cat-card__badge cat-card__badge--deceased">${esc(t('cats.deceased'))}</span>` : ''}
+      </div>
+    </div>
+    <div class="cat-card__body">
+      <h3 class="cat-card__name">${esc(catName(c))}</h3>
+      <p class="cat-card__chips">
+        ${c.breed_code ? `<span class="cat-chip cat-chip--breed">${esc(t('cat.fields.breed'))} <strong>${esc(c.breed_code)}</strong></span>` : ''}
+        ${c.ems_code ? `<span class="cat-chip cat-chip--ems">${esc(t('cat.fields.ems'))} <strong>${esc(c.ems_code)}</strong></span>` : ''}
+      </p>
+      <dl class="cat-card__facts">
+        ${fact(t('cat.fields.born'), fmtDate(c.born_on), 'born')}
+        ${deceased ? fact(t('cat.fields.died'), fmtDate(c.died_on), 'died') : ''}
+        ${fact(t('cat.fields.reg'), c.reg_number, 'reg')}
+        ${fact(t('cat.fields.breeder'), c.breeder, 'breeder')}
+        ${fact(t('cat.fields.owner'), c.owner_name, 'owner')}
+        ${fact(t('cat.fields.country'), c.country, 'country')}
+      </dl>
+    </div></a></li>`;
+};
+
 const setHint = (user: Json | null) => {
   try {
     user ? localStorage.setItem('fac-user', user.name) : localStorage.removeItem('fac-user');
@@ -162,8 +196,7 @@ async function catsPage() {
       const res = await api('GET', '/cats' + query({ ...f, page: pageNo }));
       if (!res.data.length) { results.innerHTML = `<p class="empty">${esc(t('common.empty'))}</p>`; return; }
       results.innerHTML = `<p class="count">${esc(t('cats.count', { n: res.total }))}</p>
-        <ul class="cat-list">${res.data.map((c: Json) => `<li><a href="${catUrl(c.id)}"><strong>${esc(catName(c))}</strong>
-          <span>${esc([sexLabel(c.sex), c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</span></a></li>`).join('')}</ul>
+        <ul class="cat-cards">${res.data.map((c: Json) => catCard(c)).join('')}</ul>
         ${res.last_page > 1 ? `<nav class="pager"><button class="btn btn--ghost" data-go="${res.current_page - 1}"${res.current_page <= 1 ? ' disabled' : ''}>${esc(t('common.prev'))}</button>
           <span>${esc(t('common.page', { page: res.current_page, last: res.last_page }))}</span>
           <button class="btn btn--ghost" data-go="${res.current_page + 1}"${res.current_page >= res.last_page ? ' disabled' : ''}>${esc(t('common.next'))}</button></nav>` : ''}`;

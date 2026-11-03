@@ -23,12 +23,20 @@ class CatApiTest extends TestCase
 
     public function test_search_filters_and_hides_unapproved_cats(): void
     {
-        $this->cat('Whiskers', Cat::MALE, ['ems_code' => 'n']);
+        $this->cat('Whiskers', Cat::MALE, [
+            'ems_code' => 'n', 'photo' => 'https://example.test/whiskers.jpg', 'reg_number' => 'SK-1',
+            'breeder' => 'Ada', 'owner_name' => 'Grace', 'country' => 'SK',
+        ]);
         $this->cat('Whisky', Cat::FEMALE);
         $this->cat('Hidden Whisk', Cat::FEMALE, ['moderation_status' => 'rejected']);
 
         $this->getJson('/api/cats?q=whisk')->assertOk()->assertJsonCount(2, 'data');
-        $this->getJson('/api/cats?q=Whiskers&exact=1')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/cats?q=Whiskers&exact=1')->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.photo', 'https://example.test/whiskers.jpg')
+            ->assertJsonPath('data.0.reg_number', 'SK-1')
+            ->assertJsonPath('data.0.breeder', 'Ada')
+            ->assertJsonPath('data.0.owner_name', 'Grace')
+            ->assertJsonPath('data.0.country', 'SK');
         $this->getJson('/api/cats?q=whisk&sex=female')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/cats?ems_code=n')->assertOk()->assertJsonCount(1, 'data');
     }
@@ -139,12 +147,14 @@ class CatApiTest extends TestCase
     public function test_moderation_queue_and_decisions_are_admin_only(): void
     {
         $owner = $this->user();
-        $cat = $this->cat('Waiting', Cat::MALE, ['moderation_status' => 'pending', 'owner_id' => $owner->id]);
+        $cat = $this->cat('Waiting', Cat::MALE, ['moderation_status' => 'pending', 'owner_id' => $owner->id, 'country' => 'SK']);
 
         $this->actingAs($owner, 'sanctum')->getJson('/api/admin/cats')->assertForbidden();
         $this->actingAs($owner, 'sanctum')->postJson("/api/admin/cats/{$cat->id}/approve")->assertForbidden();
         $this->getJson('/api/cats')->assertJsonCount(0, 'data');
-        $this->actingAs($owner, 'sanctum')->getJson('/api/my/cats')->assertJsonCount(1, 'data');
+        $this->actingAs($owner, 'sanctum')->getJson('/api/my/cats')->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.country', 'SK')
+            ->assertJsonPath('data.0.moderation_status', 'pending');
 
         $admin = $this->user(['is_admin' => true]);
         $this->actingAs($admin, 'sanctum')->getJson('/api/admin/cats')->assertOk()->assertJsonCount(1, 'data');

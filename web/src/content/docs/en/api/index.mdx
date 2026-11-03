@@ -26,7 +26,7 @@ Errors use standard status codes. Validation failures return `422` with `{ "mess
 | `GET /breeds`, `GET /ems` | Reference lists (`/ems` accepts `breed_id`) |
 | `GET /stats` | Counts of cats (total, males, females, living, deceased, with photo) |
 
-Only approved cats appear in public results. The coefficient `inbreeding` is a fraction between 0 and 1.
+Only approved cats appear in public results. Each search result also includes `photo`, titles, `breed_code`, `ems_code`, `born_on`, `died_on`, `reg_number`, `breeder`, `owner_name` and `country`. The coefficient `inbreeding` is a fraction between 0 and 1.
 
 ## Accounts
 

@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class CatController extends Controller
 {
-    private const LIST_COLUMNS = ['id', 'name', 'sex', 'born_on', 'died_on', 'breed_code', 'ems_code', 'title_prefix', 'title_suffix', 'photo', 'reg_number', 'sire_id', 'dam_id'];
+    private const LIST_COLUMNS = ['id', 'name', 'sex', 'born_on', 'died_on', 'breed_code', 'ems_code', 'title_prefix', 'title_suffix', 'photo', 'reg_number', 'breeder', 'owner_name', 'country', 'sire_id', 'dam_id'];
 
     private const EDITABLE = [
         'name', 'sex', 'sire_id', 'dam_id', 'born_on', 'died_on', 'title_prefix', 'title_suffix', 'alt_name',
@@ -72,7 +72,7 @@ class CatController extends Controller
     /** The signed-in user's own cats, whatever their moderation status. */
     public function mine(Request $request): array
     {
-        return ['data' => Cat::query()->where('owner_id', $request->user()->id)->orderBy('name')->get(self::LIST_COLUMNS + [13 => 'moderation_status'])];
+        return ['data' => Cat::query()->where('owner_id', $request->user()->id)->orderBy('name')->get([...self::LIST_COLUMNS, 'moderation_status'])];
     }
 
     public function show(Request $request, string $id): array
