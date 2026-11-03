@@ -83,7 +83,8 @@ const labels = { one: tr('search.one'), many: tr('search.many'), none: tr('searc
     render(terms);
   }
 
-  document.querySelectorAll('[data-open-search]').forEach((b) => b.addEventListener('click', open));
+  // Delegated: this script runs before the page's search button exists in the document.
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-open-search]')) open(); });
   modal.querySelector('[data-close-search]').addEventListener('click', close);
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open(); }

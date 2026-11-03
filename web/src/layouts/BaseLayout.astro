@@ -43,7 +43,7 @@ const other = locale === 'sk' ? 'en' : 'sk';
   </head>
   <body>
     <a class="skip-link" href="#content">{tr('nav.skip')}</a>
-    <SearchModal locale={locale} />
+    {inDocs && <SearchModal locale={locale} />}
 
     <header class="site-header">
       <div class="container site-header__inner">
@@ -60,15 +60,24 @@ const other = locale === 'sk' ? 'en' : 'sk';
           <a class="nav-link" href={localePath(locale, '/birthdays/')} aria-current={here('/birthdays') ? 'page' : undefined}>{pt['nav.birthdays']}</a>
           <a class="nav-link" id="account-link" href={localePath(locale, '/login/')} data-account={localePath(locale, '/account/')} data-label={pt['nav.account']}>{pt['nav.signin']}</a>
         </nav>
-        <button type="button" class="search-btn" data-open-search aria-label={tr('search.button')}>
-          <Icon name="search" /><span>{tr('search.button')}</span><kbd>Ctrl K</kbd>
-        </button>
         <a class="lang-btn" href={switchLocalePath(locale, Astro.url.pathname)} hreflang={other} lang={other} aria-label={tr('lang.switchLabel')}>{other.toUpperCase()}</a>
         <button type="button" class="icon-btn" id="theme-toggle" aria-label={tr('theme.toggle')}>
           <Icon name="moon" class="theme-moon" /><Icon name="sun" class="theme-sun" />
         </button>
       </div>
     </header>
+
+    {inDocs && (
+      <div class="container">
+        <div class="subheader">
+          <div class="subbar subbar--center">
+            <button type="button" class="search-btn" data-open-search aria-label={tr('search.button')}>
+              <Icon name="search" /><span>{tr('search.button')}</span><kbd>Ctrl K</kbd>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     <main id="content">
       <slot />

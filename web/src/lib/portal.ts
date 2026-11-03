@@ -1,4 +1,5 @@
 import { api, ApiError, query, upload } from './api';
+import { breedStory } from '../i18n/breedHistory';
 
 type Dict = Record<string, string>;
 type Json = any;
@@ -19,6 +20,8 @@ const esc = (v: unknown) =>
 const params = new URLSearchParams(location.search);
 const fmtDate = (d?: string | null) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(locale === 'sk' ? 'sk-SK' : 'en-GB') : '');
 const pct = (f: number) => (f * 100).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en-GB', { maximumFractionDigits: 2, minimumFractionDigits: 2 }) + ' %';
+/** Extra card class when the coefficient shows as 0.00 %. */
+const coiClass = (f: number) => (Math.round(f * 10000) === 0 ? ' coi--zero' : '');
 const sexLabel = (s?: string | null) => (s === 'male' ? t('common.male') : s === 'female' ? t('common.female') : t('common.unknown'));
 const catUrl = (id: string) => href(`/cat/?id=${encodeURIComponent(id)}`);
 const catName = (c: Json) => [c.title_prefix, c.name, c.title_suffix].filter(Boolean).join(' ');
@@ -389,31 +392,35 @@ function picker(host: HTMLElement, label: string, sex: 'male' | 'female', initia
 async function catalogPage(kind: 'ems' | 'breeds') {
   const isEms = kind === 'ems';
   subheader(`<form class="subbar" role="search" aria-label="${esc(t(isEms ? 'catalog.emsTitle' : 'catalog.breedsTitle'))}">
-      ${compactInput('filter', t('catalog.filter'), { value: params.get('filter'), className: 'subbar__field--grow' })}
-      <label class="subbar__check"><input type="checkbox" name="unused" value="1"${params.get('unused') ? ' checked' : ''}> ${esc(t('catalog.showUnused'))}</label></form>`);
+      ${compactInput('filter', t('catalog.filter'), { value: params.get('filter'), className: 'subbar__field--grow' })}</form>`);
   app.innerHTML = `<p>${esc(t('common.loading'))}</p>`;
   let groups: Json[];
   try { groups = (await api('GET', isEms ? '/ems/cats' : '/breeds/cats')).data; } catch (e) { app.innerHTML = note('error', messageOf(e)); return; }
   const form = sub.querySelector<HTMLFormElement>('form')!;
   const filter = form.querySelector<HTMLInputElement>('[name=filter]')!;
-  const unused = form.querySelector<HTMLInputElement>('[name=unused]')!;
   const field = isEms ? 'ems_code' : 'breed_code';
 
   const head = (g: Json) => isEms ? emsBadge(g.code, g.name) : `<strong>${esc(g.code)}</strong>${g.name ? ` <span class="combobox__sub">${esc(g.name)}</span>` : ''}`;
+  const group = (g: Json) => {
+    const story = isEms ? null : breedStory(g.code, locale);
+    const summary = `<span class="catalog__head">${head(g)}</span><span class="catalog__total">${esc(t('catalog.cats', { n: g.total }))}</span>${story ? `<span class="catalog__desc">${esc(story)}</span>` : ''}`;
+    if (!g.total) return `<div class="catalog__group catalog__group--empty"><div class="catalog__summary">${summary}</div></div>`;
+    const more = g.total > g.cats.length ? `<a class="btn btn--ghost" href="${href('/cats/')}${query({ [field]: g.code, exact: 1 })}">${esc(t('catalog.showAll', { n: g.total }))}</a>` : '';
+    return `<details class="catalog__group"><summary class="catalog__summary">${summary}</summary>
+      <ul class="catalog__cats">${g.cats.map((c: Json) => `<li><a href="${catUrl(c.id)}"><strong>${esc(c.name)}</strong><small>${esc([isEms ? c.breed_code : c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</small></a></li>`).join('')}</ul>${more}</details>`;
+  };
   const draw = () => {
     const f = normEms(filter.value);
-    const shown = groups.filter((g) => (unused.checked || g.total > 0) && (!f || normEms(`${g.code} ${g.name ?? ''}`).includes(f)));
-    app.innerHTML = shown.length ? `<p class="count">${esc(t('catalog.count', { n: shown.length }))}</p><div class="catalog">${shown.map((g) => {
-      const summary = `<span class="catalog__head">${head(g)}</span><span class="catalog__total">${esc(t('catalog.cats', { n: g.total }))}</span>`;
-      if (!g.total) return `<div class="catalog__group catalog__group--empty"><div class="catalog__summary">${summary}</div></div>`;
-      const more = g.total > g.cats.length ? `<a class="btn btn--ghost" href="${href('/cats/')}${query({ [field]: g.code, exact: 1 })}">${esc(t('catalog.showAll', { n: g.total }))}</a>` : '';
-      return `<details class="catalog__group"><summary class="catalog__summary">${summary}</summary>
-        <ul class="catalog__cats">${g.cats.map((c: Json) => `<li><a href="${catUrl(c.id)}"><strong>${esc(c.name)}</strong><small>${esc([isEms ? c.breed_code : c.ems_code, fmtDate(c.born_on)].filter(Boolean).join(' · '))}</small></a></li>`).join('')}</ul>${more}</details>`;
-    }).join('')}</div>` : `<p class="empty">${esc(t('common.empty'))}</p>`;
+    const shown = groups.filter((g) => !f || normEms(`${g.code} ${g.name ?? ''}`).includes(f));
+    const used = shown.filter((g) => g.total > 0);
+    const empty = shown.filter((g) => !g.total);
+    app.innerHTML = shown.length
+      ? `<p class="count">${esc(t('catalog.count', { n: shown.length }))}</p><div class="catalog">${used.map(group).join('')}</div>
+        ${empty.length ? `<h2 class="catalog__divider">${esc(t('catalog.unused', { n: empty.length }))}</h2><div class="catalog">${empty.map(group).join('')}</div>` : ''}`
+      : `<p class="empty">${esc(t('common.empty'))}</p>`;
   };
   form.addEventListener('submit', (ev) => ev.preventDefault());
   filter.addEventListener('input', draw);
-  unused.addEventListener('change', draw);
   draw();
 }
 
@@ -506,7 +513,7 @@ async function catPage() {
         </dl>
         <div class="cat-grid__side">
         ${c.photo ? `<img class="cat-photo" src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-photo cat-photo--empty">${catPlaceholder('cat-placeholder')}</div>`}
-        <aside class="coi"><h2>${esc(t('cat.inbreeding'))}</h2><p class="coi__value">${esc(pct(c.inbreeding))}</p>
+        <aside class="coi${coiClass(c.inbreeding)}"><h2>${esc(t('cat.inbreeding'))}</h2><p class="coi__value">${esc(pct(c.inbreeding))}</p>
           <div class="coi__bar" aria-hidden="true"><span style="width:${Math.min(100, c.inbreeding * 100 * 2)}%"></span></div>
           <p class="coi__help">${esc(t('cat.inbreedingHelp'))}</p></aside></div>
       </div>
@@ -546,7 +553,17 @@ function matingPage() {
   subheader(`<form class="subbar subbar--end" role="search" aria-label="${esc(t('mating.title'))}"><div id="sire-host" class="subbar__host" data-name="sire"></div><div id="dam-host" class="subbar__host" data-name="dam"></div>
       <button class="btn btn--primary" type="submit">${esc(t('mating.run'))}</button>
       <p class="form-error" role="alert"></p></form>`);
-  app.innerHTML = `<p class="lead">${esc(t('mating.lead'))}</p><div id="out" aria-live="polite"></div>`;
+  const emptyState = `<svg class="mating-empty" viewBox="0 0 360 200" role="img" aria-label="${esc(t('mating.lead'))}" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="5 6"><path d="M96 54h40q14 0 14 14v18"/><path d="M96 146h40q14 0 14-14v-18"/><path d="M150 100h56"/></g>
+      <g stroke-width="2.5" fill="none">
+        <rect x="24" y="30" width="72" height="48" rx="10" stroke="var(--male)"/><rect x="24" y="122" width="72" height="48" rx="10" stroke="var(--female)"/>
+        <rect x="206" y="68" width="96" height="64" rx="12" stroke="currentColor" stroke-dasharray="5 6"/>
+      </g>
+      <g fill="currentColor"><path d="M46 44l5 6h22l5-6v14a14 11 0 01-32 0z" opacity=".7"/><path d="M46 136l5 6h22l5-6v14a14 11 0 01-32 0z" opacity=".7"/></g>
+      <text x="254" y="112" text-anchor="middle" font-size="40" font-weight="700" fill="currentColor">?</text>
+      <text x="60" y="91" text-anchor="middle" font-size="22" fill="var(--male)">♂</text><text x="60" y="183" text-anchor="middle" font-size="22" fill="var(--female)">♀</text>
+    </svg>`;
+  app.innerHTML = `<p class="lead">${esc(t('mating.lead'))}</p><div id="out" aria-live="polite">${emptyState}</div>`;
   const sire = picker(sub.querySelector('#sire-host')!, t('mating.sire'), 'male');
   const dam = picker(sub.querySelector('#dam-host')!, t('mating.dam'), 'female');
   const out = app.querySelector<HTMLElement>('#out')!;
@@ -556,7 +573,7 @@ function matingPage() {
     form.querySelector('.form-error')!.textContent = '';
     const { data } = await api('GET', '/test-mating' + query({ sire: sire.id, dam: dam.id, generations: 4 }));
     const causal = causalAncestors(data.sire, data.dam);
-    out.innerHTML = `<section class="coi coi--wide"><h2>${esc(t('mating.result'))}</h2><p class="coi__value">${esc(pct(data.inbreeding))}</p>
+    out.innerHTML = `<section class="coi coi--wide${coiClass(data.inbreeding)}"><h2>${esc(t('mating.result'))}</h2><p class="coi__value">${esc(pct(data.inbreeding))}</p>
       <div class="coi__bar" aria-hidden="true"><span style="width:${Math.min(100, data.inbreeding * 200)}%"></span></div>
       <p class="coi__help">${esc(t('cat.inbreedingHelp'))} <a href="${href('/docs/genetics/inbreeding/')}">?</a></p></section>
       <h2>${esc(t('cat.pedigree'))}</h2>
@@ -593,6 +610,14 @@ async function birthdaysPage() {
   const next = sub.querySelector<HTMLButtonElement>('[data-week="1"]')!;
   const current = sub.querySelector<HTMLButtonElement>('#this-week')!;
 
+  const cake = `<svg class="empty-art" viewBox="0 0 360 200" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M120 176h120"/><rect x="132" y="112" width="96" height="64" rx="8"/><path d="M132 140q12 12 24 0t24 0 24 0 24 0"/>
+        <rect x="150" y="84" width="60" height="28" rx="6"/><path d="M180 84V62"/><path d="M180 38q-9 11 0 20 9-9 0-20z" fill="currentColor"/>
+        <path d="M60 50l8 8m-8 0l8-8M296 70l8 8m-8 0l8-8M80 130h12m-6-6v12M274 138h12m-6-6v12"/>
+        <path d="M70 176l12-26 12 26zM266 176l12-26 12 26z" stroke-dasharray="4 6"/>
+      </g></svg>`;
+
   async function load() {
     const sunday = addDays(monday, 6);
     label.innerHTML = `${esc(t('birthdays.week', { n: isoWeek(monday) }))}<small>${esc(short(monday))} – ${esc(short(sunday))}</small>`;
@@ -608,7 +633,7 @@ async function birthdaysPage() {
       const rows = data.filter((b: Json) => b.birthday >= from && b.birthday <= to);
       out.innerHTML = rows.length
         ? `<ul class="cat-list">${rows.map((b: Json) => `<li><a href="${catUrl(b.id)}"><strong>${esc(b.name)}</strong><span>${esc(fmtDate(b.birthday))} · ${esc(t('birthdays.turns', { n: b.turns }))}</span></a></li>`).join('')}</ul>`
-        : `<p class="empty">${esc(t('common.empty'))}</p>`;
+        : `${cake}<p class="empty">${esc(t('common.empty'))}</p>`;
     } catch (e) { out.innerHTML = note('error', messageOf(e)); }
   }
   sub.querySelector('.subbar')!.addEventListener('click', (ev) => {
@@ -826,6 +851,7 @@ async function adminPage() {
   const open = async (key: string) => {
     sub.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === key)));
     panel.innerHTML = '';
+    panel.onclick = null;
     try { await tabs[key](); } catch (e) { panel.innerHTML = note('error', messageOf(e)); }
   };
   sub.querySelector('.subbar__tabs')!.addEventListener('click', (ev) => {
@@ -834,12 +860,20 @@ async function adminPage() {
   });
   open(tabs[location.hash.slice(1)] ? location.hash.slice(1) : 'queue');
 
+  /** Page heading of a tab: title, one-line purpose and an optional count badge. */
+  const head = (title: string, lead: string, count?: number) => `<header class="admin-head"><div><h2>${esc(title)}</h2><p>${esc(lead)}</p></div>${count !== undefined ? `<span class="admin-count" title="${esc(title)}">${count}</span>` : ''}</header>`;
+  const MAX_ROWS = 100;
+
   async function queueTab() {
     const { data } = await api('GET', '/admin/cats?status=pending');
-    panel.innerHTML = data.length
-      ? `<ul class="cat-list cat-list--wide">${data.map((c: Json) => `<li data-id="${esc(c.id)}"><a href="${catUrl(c.id)}"><strong>${esc(catName(c))}</strong><span>${esc([c.ems_code, c.owner ? t('admin.addedBy', { name: c.owner.name }) : ''].filter(Boolean).join(' · '))}</span></a>
-          <div class="row"><button class="btn btn--primary" data-act="approve">${esc(t('admin.approve'))}</button><button class="btn btn--ghost" data-act="reject">${esc(t('admin.reject'))}</button></div></li>`).join('')}</ul>`
-      : `<p class="empty">${esc(t('admin.queueEmpty'))}</p>`;
+    const empty = `<div class="admin-empty"><svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="4"/><path d="M40 62l14 14 28-30" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><p>${esc(t('admin.queueEmpty'))}</p></div>`;
+    const count = () => panel.querySelector<HTMLElement>('.admin-count');
+    panel.innerHTML = head(t('admin.tab.queue'), t('admin.lead.queue'), data.length)
+      + (data.length ? `<ul class="queue">${data.map((c: Json) => `<li class="queue__item" data-id="${esc(c.id)}">
+          <a class="queue__main" href="${catUrl(c.id)}"><strong>${esc(catName(c))}</strong>
+            <span class="queue__meta">${[c.sex ? esc(sexLabel(c.sex)) : '', c.breed_code ? `<b>${esc(c.breed_code)}</b>` : '', c.ems_code ? esc(c.ems_code) : ''].filter(Boolean).join(' · ')}</span>
+            ${c.owner ? `<span class="queue__by">${esc(t('admin.addedBy', { name: c.owner.name }))}</span>` : ''}</a>
+          <div class="queue__actions"><button class="btn btn--primary" data-act="approve">${esc(t('admin.approve'))}</button><button class="btn btn--ghost" data-act="reject">${esc(t('admin.reject'))}</button></div></li>`).join('')}</ul>` : empty);
     panel.onclick = async (ev) => {
       const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
       if (!b) return;
@@ -848,17 +882,41 @@ async function adminPage() {
       try {
         await api('POST', `/admin/cats/${encodeURIComponent(li.dataset.id!)}/${b.dataset.act}`);
         li.remove();
-        if (!panel.querySelector('li')) panel.innerHTML = `<p class="empty">${esc(t('admin.queueEmpty'))}</p>`;
+        const left = panel.querySelectorAll('.queue__item').length;
+        const badge = count();
+        if (badge) badge.textContent = String(left);
+        if (!left) panel.querySelector('.queue')!.outerHTML = empty;
       } catch (e) { b.disabled = false; panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e))); }
     };
   }
 
-  /** Shared list-with-add-form editor for breeds and EMS colours. */
-  async function crudTab(resource: 'breeds' | 'ems', fields: { name: string; label: string; required?: boolean; options?: [string, string][] }[], label: (r: Json) => string) {
+  /** Shared editor for breeds and EMS colours: an add form beside a filterable list. */
+  async function crudTab(
+    resource: 'breeds' | 'ems',
+    cfg: { title: string; lead: string; addTitle: string; fields: { name: string; label: string; required?: boolean; options?: [string, string][] }[]; row: (r: Json) => string; text: (r: Json) => string },
+  ) {
     const { data } = await api('GET', '/' + resource);
-    panel.innerHTML = `<form class="stack row-form" novalidate>${fields.map((f) => (f.options ? select(f.name, f.label, f.options) : input(f.name, f.label, { required: f.required }))).join('')}
-        <p class="form-error" role="alert"></p><div><button class="btn btn--primary" type="submit">${esc(t('admin.add'))}</button></div></form>
-      <ul class="cat-list cat-list--wide">${data.map((r: Json) => `<li data-id="${esc(r.id)}"><span><strong>${esc(label(r))}</strong></span><button class="btn btn--ghost" data-del>${esc(t('common.delete'))}</button></li>`).join('')}</ul>`;
+    panel.innerHTML = head(cfg.title, cfg.lead, data.length)
+      + `<div class="admin-split">
+        <section class="admin-card admin-card--form"><h3>${esc(cfg.addTitle)}</h3>
+          <form class="stack" novalidate>${cfg.fields.map((f) => (f.options ? select(f.name, f.label, f.options) : input(f.name, f.label, { required: f.required }))).join('')}
+            <p class="form-error" role="alert"></p><div><button class="btn btn--primary" type="submit">${esc(t('admin.add'))}</button></div></form></section>
+        <section class="admin-card admin-card--list">
+          <div class="admin-toolbar"><input id="list-filter" type="search" placeholder="${esc(t('admin.filter'))}" aria-label="${esc(t('admin.filter'))}" autocomplete="off"><span class="admin-hint" id="list-hint" aria-live="polite"></span></div>
+          <ul class="admin-list" id="admin-list"></ul></section></div>`;
+    const list = panel.querySelector<HTMLElement>('#admin-list')!;
+    const hint = panel.querySelector<HTMLElement>('#list-hint')!;
+    const filter = panel.querySelector<HTMLInputElement>('#list-filter')!;
+    const draw = () => {
+      const f = normEms(filter.value);
+      const hits = data.filter((r: Json) => !f || normEms(cfg.text(r)).includes(f));
+      list.innerHTML = hits.length
+        ? hits.slice(0, MAX_ROWS).map((r: Json) => `<li class="admin-row" data-id="${esc(r.id)}"><div class="admin-row__main">${cfg.row(r)}</div><button class="btn btn--ghost btn--small" data-del>${esc(t('common.delete'))}</button></li>`).join('')
+        : `<li class="admin-row admin-row--none">${esc(t('common.empty'))}</li>`;
+      hint.textContent = hits.length > MAX_ROWS ? t('admin.moreHidden', { n: hits.length - MAX_ROWS }) : '';
+    };
+    filter.addEventListener('input', draw);
+    draw();
     onSubmit(panel.querySelector('form')!, async (d) => {
       await api('POST', '/admin/' + resource, Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v === '' ? null : v])));
       await open(resource);
@@ -872,25 +930,42 @@ async function adminPage() {
   }
 
   async function breedsTab() {
-    await crudTab('breeds', [{ name: 'code', label: t('admin.code'), required: true }, { name: 'name', label: t('admin.name') }], (r) => [r.code, r.name].filter(Boolean).join(' · '));
+    await crudTab('breeds', {
+      title: t('admin.tab.breeds'), lead: t('admin.lead.breeds'), addTitle: t('admin.addBreed'),
+      fields: [{ name: 'code', label: t('admin.code'), required: true }, { name: 'name', label: t('admin.name') }],
+      row: (r) => `<span class="admin-code">${esc(r.code)}</span><span class="admin-row__name">${esc(r.name ?? '')}</span>`,
+      text: (r) => `${r.code} ${r.name ?? ''}`,
+    });
   }
 
   async function emsTab() {
     const breeds = (await api('GET', '/breeds')).data as Json[];
     const names = Object.fromEntries(breeds.map((b) => [b.id, b.code]));
-    await crudTab('ems', [
-      { name: 'code', label: t('admin.code'), required: true }, { name: 'english_name', label: t('admin.englishName') },
-      { name: 'breed_id', label: t('admin.breed'), options: [['', t('admin.noBreed')], ...breeds.map((b): [string, string] => [b.id, b.code])] },
-    ], (r) => [names[r.breed_id], r.code, r.english_name].filter(Boolean).join(' · '));
+    await crudTab('ems', {
+      title: t('admin.tab.ems'), lead: t('admin.lead.ems'), addTitle: t('admin.addEms'),
+      fields: [
+        { name: 'code', label: t('admin.code'), required: true }, { name: 'english_name', label: t('admin.englishName') },
+        { name: 'breed_id', label: t('admin.breed'), options: [['', t('admin.noBreed')], ...breeds.map((b): [string, string] => [b.id, b.code])] },
+      ],
+      row: (r) => `${emsBadge(r.code, r.english_name)}${names[r.breed_id] ? `<span class="admin-chip">${esc(names[r.breed_id])}</span>` : ''}`,
+      text: (r) => `${r.code} ${r.english_name ?? ''} ${names[r.breed_id] ?? ''}`,
+    });
   }
 
   async function usersTab() {
-    panel.innerHTML = `<div class="field"><label for="user-q">${esc(t('admin.searchUsers'))}</label><input id="user-q" type="search"></div><ul class="cat-list cat-list--wide" id="users"></ul>`;
+    panel.innerHTML = head(t('admin.tab.users'), t('admin.lead.users'))
+      + `<section class="admin-card admin-card--list"><div class="admin-toolbar"><input id="user-q" type="search" placeholder="${esc(t('admin.searchUsers'))}" aria-label="${esc(t('admin.searchUsers'))}" autocomplete="off"><span class="admin-hint" id="user-count" aria-live="polite"></span></div>
+        <ul class="admin-list" id="users"></ul></section>`;
     const list = panel.querySelector<HTMLElement>('#users')!;
+    const total = panel.querySelector<HTMLElement>('#user-count')!;
     const load = async (q: string) => {
       const { data } = await api('GET', '/admin/users' + query({ q }));
-      list.innerHTML = data.map((u: Json) => `<li data-id="${esc(u.id)}"><span><strong>${esc(u.name)}</strong> <small>${esc(u.email)}</small></span>
-        <label class="check"><input type="checkbox" ${u.is_admin ? 'checked' : ''}${u.id === user.id ? ' disabled' : ''}> ${esc(t('admin.isAdmin'))}</label></li>`).join('');
+      total.textContent = String(data.length);
+      list.innerHTML = data.length ? data.map((u: Json) => `<li class="admin-row" data-id="${esc(u.id)}">
+        <span class="admin-avatar" aria-hidden="true">${esc(String(u.name ?? '?').trim().charAt(0).toUpperCase())}</span>
+        <div class="admin-row__main admin-row__main--stack"><strong>${esc(u.name)}</strong><small>${esc(u.email)}</small></div>
+        <label class="check admin-toggle"><input type="checkbox" ${u.is_admin ? 'checked' : ''}${u.id === user.id ? ' disabled' : ''}> ${esc(t('admin.isAdmin'))}</label></li>`).join('')
+        : `<li class="admin-row admin-row--none">${esc(t('common.empty'))}</li>`;
     };
     let timer: number;
     panel.querySelector('#user-q')!.addEventListener('input', (ev) => {
@@ -906,14 +981,17 @@ async function adminPage() {
   }
 
   async function backupTab() {
-    panel.innerHTML = `<p class="lead">${esc(t('admin.backupLead'))}</p>`
-      + TABLES.map((tb) => `<section class="backup" data-table="${tb}"><h2>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h2>
-        <p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a>${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : ''}${tb === 'breeds' ? `<button class="btn btn--ghost" type="button" data-reference>${esc(t('admin.loadReference'))}</button>` : ''}</p>
-        ${tb === 'cats' ? `<div class="import-out" data-seed-out aria-live="polite"></div>` : ''}${tb === 'breeds' ? `<div class="import-out" data-reference-out aria-live="polite"></div>` : ''}
-        <form class="stack" data-import novalidate><div class="field"><label for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
-          <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></section>`).join('')
-      + `<section class="danger"><h2>${esc(t('admin.danger'))}</h2><p>${esc(t('admin.clearLead'))}</p>
-        ${TABLES.map((tb) => `<form class="row" data-clear="${tb}" novalidate><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</section>`;
+    const tableLead: Record<string, string> = { cats: t('admin.tableLead.cats'), breeds: t('admin.tableLead.breeds'), ems: t('admin.tableLead.ems') };
+    panel.innerHTML = head(t('admin.tab.backup'), t('admin.backupLead'))
+      + `<div class="admin-grid">${TABLES.map((tb) => `<section class="admin-card backup" data-table="${tb}"><h3>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h3><p class="admin-card__lead">${esc(tableLead[tb])}</p>
+          <div class="admin-step"><h4>${esc(t('admin.backup'))}</h4><p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a></p></div>
+          <div class="admin-step"><h4>${esc(t('admin.restore'))}</h4>
+            <form class="stack" data-import novalidate><div class="field"><label class="sr-only" for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
+              <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></div>
+          ${tb === 'cats' || tb === 'breeds' ? `<div class="admin-step"><h4>${esc(t('admin.sampleData'))}</h4><p class="row">${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : `<button class="btn btn--ghost" type="button" data-reference>${esc(t('admin.loadReference'))}</button>`}</p>
+            <div class="import-out" ${tb === 'cats' ? 'data-seed-out' : 'data-reference-out'} aria-live="polite"></div></div>` : ''}</section>`).join('')}</div>
+      <section class="admin-card danger"><h3>${esc(t('admin.danger'))}</h3><p class="admin-card__lead">${esc(t('admin.clearLead'))}</p>
+        <div class="danger__rows">${TABLES.map((tb) => `<form class="danger__row" data-clear="${tb}" novalidate><span class="danger__name">${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</span><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost btn--danger" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</div></section>`;
 
     const seed = panel.querySelector<HTMLButtonElement>('[data-seed]');
     seed?.addEventListener('click', async () => {
