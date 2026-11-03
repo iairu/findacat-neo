@@ -63,6 +63,7 @@ Všetky pod `/admin`, len pre administrátorov.
 | `POST /admin/breeds`, `PUT`/`DELETE /admin/breeds/{id}` | Plemená (`code`, `name`) |
 | `POST /admin/ems`, `PUT`/`DELETE /admin/ems/{id}` | Farby EMS (`code`, `english_name`, `breed_id`) |
 | `GET /admin/users?q=`, `PATCH /admin/users/{id}` | Hľadanie používateľov; nastavenie `is_admin` |
+| `POST /admin/seed/cats` | Pridať 24 vygenerovaných mačiek v štyroch generáciách (a ukážkové plemená či farby EMS, ak sú tabuľky prázdne); vráti počty `cats`, `breeds`, `ems` |
 | `GET /admin/backup/{cats\|breeds\|ems}` | Stiahnuť CSV |
 | `POST /admin/backup/{table}` | Importovať CSV (multipart pole `file`). Vráti `counts` a `warnings` |
 | `DELETE /admin/backup/{table}` | Zmazať všetky riadky; telo `{ "confirm": "DELETE" }` |

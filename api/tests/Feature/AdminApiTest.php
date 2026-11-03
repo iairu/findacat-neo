@@ -6,6 +6,7 @@ use App\Models\Breed;
 use App\Models\Cat;
 use App\Models\EmsColor;
 use App\Models\User;
+use App\Services\FakePedigree;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -25,8 +26,52 @@ class AdminApiTest extends TestCase
 
         $this->actingAs($user)->postJson('/api/admin/breeds', ['code' => 'ABC'])->assertForbidden();
         $this->actingAs($user)->getJson('/api/admin/users')->assertForbidden();
+        $this->actingAs($user)->postJson('/api/admin/seed/cats')->assertForbidden();
         $this->actingAs($user)->getJson('/api/admin/backup/cats')->assertForbidden();
         $this->actingAs($user)->deleteJson('/api/admin/backup/cats', ['confirm' => 'DELETE'])->assertForbidden();
+    }
+
+    public function test_admin_seeds_a_fake_pedigree(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->postJson('/api/admin/seed/cats')
+            ->assertCreated()
+            ->assertJsonPath('data.cats', FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION)
+            ->assertJsonPath('data.breeds', 6)
+            ->assertJsonPath('data.ems', 6);
+
+        $cats = Cat::all()->keyBy('id');
+
+        $this->assertCount(FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION, $cats);
+        $this->assertSame(FakePedigree::PER_GENERATION, $cats->whereNull('sire_id')->count());
+        $this->assertSame(6, Breed::count());
+        $this->assertSame(6, EmsColor::count());
+
+        foreach ($cats as $cat) {
+            $this->assertSame('approved', $cat->moderation_status);
+
+            if ($cat->sire_id !== null) {
+                $sire = $cats[$cat->sire_id];
+                $this->assertSame(Cat::MALE, $sire->sex);
+                $this->assertTrue($sire->born_on->lt($cat->born_on));
+            }
+
+            if ($cat->dam_id !== null) {
+                $dam = $cats[$cat->dam_id];
+                $this->assertSame(Cat::FEMALE, $dam->sex);
+                $this->assertTrue($dam->born_on->lt($cat->born_on));
+            }
+        }
+
+        // A second run adds more cats but reuses the breeds and colours that now exist.
+        $this->actingAs($admin)->postJson('/api/admin/seed/cats')
+            ->assertCreated()
+            ->assertJsonPath('data.cats', FakePedigree::GENERATIONS * FakePedigree::PER_GENERATION)
+            ->assertJsonPath('data.breeds', 0)
+            ->assertJsonPath('data.ems', 0);
+        $this->assertSame(6, Breed::count());
+        $this->assertSame(6, EmsColor::count());
     }
 
     public function test_admin_manages_breeds_and_ems_colours(): void

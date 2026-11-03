@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminBackupController;
 use App\Http\Controllers\Api\AdminBreedController;
 use App\Http\Controllers\Api\AdminCatController;
 use App\Http\Controllers\Api\AdminEmsController;
+use App\Http\Controllers\Api\AdminSeedController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatController;
@@ -72,6 +73,8 @@ Route::middleware(['auth:sanctum', 'verified', 'can:admin'])->prefix('admin')->g
 
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::patch('/users/{user}', [AdminUserController::class, 'update']);
+
+    Route::post('/seed/cats', [AdminSeedController::class, 'cats']);
 
     Route::get('/backup/{table}', [AdminBackupController::class, 'export']);
     Route::post('/backup/{table}', [AdminBackupController::class, 'import']);

@@ -63,6 +63,7 @@ All under `/admin`, administrators only.
 | `POST /admin/breeds`, `PUT`/`DELETE /admin/breeds/{id}` | Breeds (`code`, `name`) |
 | `POST /admin/ems`, `PUT`/`DELETE /admin/ems/{id}` | EMS colours (`code`, `english_name`, `breed_id`) |
 | `GET /admin/users?q=`, `PATCH /admin/users/{id}` | Search users; set `is_admin` |
+| `POST /admin/seed/cats` | Add 24 generated cats in four generations (plus demo breeds/EMS if those tables are empty); returns `cats`, `breeds`, `ems` counts |
 | `GET /admin/backup/{cats\|breeds\|ems}` | Download CSV |
 | `POST /admin/backup/{table}` | Import CSV (multipart field `file`). Returns `counts` and `warnings` |
 | `DELETE /admin/backup/{table}` | Delete all rows; body `{ "confirm": "DELETE" }` |

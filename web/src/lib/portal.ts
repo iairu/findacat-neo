@@ -481,11 +481,26 @@ async function adminPage() {
   async function backupTab() {
     panel.innerHTML = `<p class="lead">${esc(t('admin.backupLead'))}</p>`
       + TABLES.map((tb) => `<section class="backup" data-table="${tb}"><h2>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h2>
-        <p><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a></p>
+        <p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a>${tb === 'cats' ? `<button class="btn btn--ghost" type="button" data-seed>${esc(t('admin.seed'))}</button>` : ''}</p>
+        ${tb === 'cats' ? `<div class="import-out" data-seed-out aria-live="polite"></div>` : ''}
         <form class="stack" data-import novalidate><div class="field"><label for="file-${tb}">${esc(t('admin.file'))}</label><input id="file-${tb}" name="file" type="file" accept=".csv,text/csv" required><small class="field-error" data-error-for="file" role="alert"></small></div>
           <p class="form-error" role="alert"></p><div class="import-out" aria-live="polite"></div><div><button class="btn btn--primary" type="submit">${esc(t('admin.import'))}</button></div></form></section>`).join('')
       + `<section class="danger"><h2>${esc(t('admin.danger'))}</h2><p>${esc(t('admin.clearLead'))}</p>
         ${TABLES.map((tb) => `<form class="row" data-clear="${tb}" novalidate><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</section>`;
+
+    const seed = panel.querySelector<HTMLButtonElement>('[data-seed]');
+    seed?.addEventListener('click', async () => {
+      if (!confirm(t('admin.seedConfirm'))) return;
+      seed.disabled = true;
+      try {
+        const { data } = await api('POST', '/admin/seed/cats');
+        panel.querySelector<HTMLElement>('[data-seed-out]')!.innerHTML = note('ok', t('admin.seeded', { cats: data.cats }));
+      } catch (e) {
+        panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e)));
+      } finally {
+        seed.disabled = false;
+      }
+    });
 
     panel.querySelectorAll<HTMLFormElement>('form[data-import]').forEach((form) => {
       const tb = form.closest<HTMLElement>('[data-table]')!.dataset.table!;
