@@ -338,37 +338,36 @@ a.card:hover { border-color: var(--accent); color: var(--text); box-shadow: var(
 .cat-list a:hover { border-color: var(--accent); }
 .cat-list span { color: var(--text-3); font-size: 0.9rem; }
 
-/* Search results: richer cards with photo frames for sex, titles and lifespan. */
-.cat-cards { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr)); }
+/* Search results: compact horizontal cards with photo frames for sex and lifespan. */
+.cat-cards { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
 .cat-card { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease; }
 .cat-card:hover, .cat-card:focus-within { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 2px 4px rgb(60 40 10 / 0.1), 0 16px 32px -18px rgb(60 40 10 / 0.28); }
-.cat-card__link { display: flex; flex-direction: column; width: 100%; color: inherit; text-decoration: none; border-radius: var(--radius); }
+.cat-card__link { display: flex; align-items: stretch; width: 100%; color: inherit; text-decoration: none; border-radius: var(--radius); }
 .cat-card__link:focus-visible { outline-offset: -3px; }
-.cat-card__media { position: relative; margin: 0.65rem 0.65rem 0; aspect-ratio: 4 / 3; border: 4px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); overflow: hidden; }
+.cat-card__media { position: relative; flex: 0 0 5.5rem; width: 5.5rem; aspect-ratio: 1; align-self: center; margin: 0.5rem 0 0.5rem 0.5rem; border: 3px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); overflow: hidden; }
 .cat-card--male .cat-card__media { border-color: var(--male); }
 .cat-card--female .cat-card__media { border-color: var(--female); }
 .cat-card--deceased .cat-card__media { border-color: var(--text-3); }
 .cat-card--titled .cat-card__media { box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px color-mix(in srgb, var(--gold) 28%, transparent); }
 .cat-card__photo { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cat-card--deceased .cat-card__photo { filter: grayscale(0.85) contrast(0.95); }
-.cat-card__placeholder { display: grid; place-items: center; width: 100%; height: 100%; font-size: 2.6rem; color: var(--text-3); background: repeating-linear-gradient(135deg, var(--surface-2) 0 10px, var(--surface) 10px 20px); }
-.cat-card__badges { position: absolute; inset: auto 0.4rem 0.4rem auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.3rem; }
-.cat-card__badge { padding: 0.1rem 0.5rem; border: 1px solid transparent; border-radius: 999px; font-size: 0.72rem; font-weight: 700; line-height: 1.5; backdrop-filter: blur(6px); }
-.cat-card__badge--male { color: var(--male); background: color-mix(in srgb, var(--male) 18%, var(--surface)); border-color: color-mix(in srgb, var(--male) 40%, transparent); }
-.cat-card__badge--female { color: var(--female); background: color-mix(in srgb, var(--female) 18%, var(--surface)); border-color: color-mix(in srgb, var(--female) 40%, transparent); }
-.cat-card__badge--titled { color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, var(--surface)); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
+.cat-card__placeholder { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.75rem; color: var(--text-3); background: repeating-linear-gradient(135deg, var(--surface-2) 0 8px, var(--surface) 8px 16px); }
+.cat-card__sex { position: absolute; right: 0.3rem; bottom: 0.3rem; display: grid; place-items: center; width: 1.55rem; height: 1.55rem; border: 1px solid transparent; border-radius: 50%; font-size: 0.9rem; font-weight: 700; line-height: 1; box-shadow: 0 1px 3px rgb(0 0 0 / 0.2); }
+.cat-card__sex--male { color: var(--male); background: color-mix(in srgb, var(--male) 18%, var(--surface)); border-color: color-mix(in srgb, var(--male) 40%, transparent); }
+.cat-card__sex--female { color: var(--female); background: color-mix(in srgb, var(--female) 18%, var(--surface)); border-color: color-mix(in srgb, var(--female) 40%, transparent); }
+.cat-card__badge { padding: 0.05rem 0.4rem; border: 1px solid transparent; border-radius: 999px; font-size: 0.7rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
 .cat-card__badge--deceased { color: var(--text-2); background: color-mix(in srgb, var(--text-3) 20%, var(--surface)); border-color: color-mix(in srgb, var(--text-3) 40%, transparent); }
-.cat-card__body { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.75rem 0.95rem 1rem; }
-.cat-card__name { margin: 0; font-family: var(--font-display); font-size: 1.25rem; line-height: 1.25; color: var(--accent-strong); }
-.cat-card__chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; }
-.cat-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.08rem 0.5rem; border: 1px solid transparent; border-radius: 999px; font-size: 0.75rem; color: var(--text-2); background: var(--surface-2); }
+.cat-card__body { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; justify-content: center; gap: 0.35rem; padding: 0.6rem 0.7rem 0.65rem; }
+.cat-card__name { margin: 0; font-family: var(--font-display); font-size: 1.12rem; line-height: 1.2; color: var(--accent-strong); }
+.cat-card__chips { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0; }
+.cat-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.05rem 0.4rem; border: 1px solid transparent; border-radius: 999px; font-size: 0.7rem; color: var(--text-2); background: var(--surface-2); white-space: nowrap; }
 .cat-chip strong { font-weight: 700; }
 .cat-chip--breed { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 34%, transparent); }
 .cat-chip--ems { color: var(--ems); background: color-mix(in srgb, var(--ems) 14%, var(--surface)); border-color: color-mix(in srgb, var(--ems) 34%, transparent); }
-.cat-card__facts { display: grid; gap: 0.15rem; margin: 0.15rem 0 0; }
-.cat-card__fact { display: grid; grid-template-columns: 5.75rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
-.cat-card__fact dt { color: var(--text-3); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.cat-card__fact dd { margin: 0; overflow: hidden; font-size: 0.88rem; text-overflow: ellipsis; white-space: nowrap; }
+.cat-card__facts { display: grid; gap: 0.05rem; margin: 0; }
+.cat-card__fact { display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; }
+.cat-card__fact dt { flex: 0 0 auto; color: var(--text-3); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.03em; line-height: 1.35; text-transform: uppercase; }
+.cat-card__fact dd { flex: 1 1 auto; min-width: 0; margin: 0; overflow: hidden; font-size: 0.82rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .cat-card__fact--born dd { color: var(--accent); }
 .cat-card__fact--died dd { color: var(--text-3); }
 .cat-card__fact--reg dd { font-family: var(--font-mono); font-size: 0.8rem; color: var(--gold); }

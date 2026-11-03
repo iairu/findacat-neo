@@ -31,15 +31,12 @@ const catCard = (c: Json) => {
   return `<li class="${classes}"><a class="cat-card__link" href="${catUrl(c.id)}">
     <div class="cat-card__media">
       ${c.photo ? `<img class="cat-card__photo" src="${esc(c.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-card__placeholder" aria-hidden="true">🐾</div>`}
-      <div class="cat-card__badges">
-        ${c.sex ? `<span class="cat-card__badge cat-card__badge--${esc(c.sex)}"><span aria-hidden="true">${sexSymbol}</span> ${esc(sexLabel(c.sex))}</span>` : ''}
-        ${titles ? `<span class="cat-card__badge cat-card__badge--titled"><span aria-hidden="true">★</span> ${esc(titles)}</span>` : ''}
-        ${deceased ? `<span class="cat-card__badge cat-card__badge--deceased">${esc(t('cats.deceased'))}</span>` : ''}
-      </div>
+      ${c.sex ? `<span class="cat-card__sex cat-card__sex--${esc(c.sex)}" role="img" aria-label="${esc(sexLabel(c.sex))}" title="${esc(sexLabel(c.sex))}"><span aria-hidden="true">${sexSymbol}</span></span>` : ''}
     </div>
     <div class="cat-card__body">
       <h3 class="cat-card__name">${esc(catName(c))}</h3>
       <p class="cat-card__chips">
+        ${deceased ? `<span class="cat-card__badge cat-card__badge--deceased">${esc(t('cats.deceased'))}</span>` : ''}
         ${c.breed_code ? `<span class="cat-chip cat-chip--breed">${esc(t('cat.fields.breed'))} <strong>${esc(c.breed_code)}</strong></span>` : ''}
         ${c.ems_code ? `<span class="cat-chip cat-chip--ems">${esc(t('cat.fields.ems'))} <strong>${esc(c.ems_code)}</strong></span>` : ''}
       </p>
