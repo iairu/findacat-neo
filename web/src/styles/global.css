@@ -388,7 +388,7 @@ body { overflow-x: clip; }
 .cat-card--titled .cat-card__media { box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px color-mix(in srgb, var(--gold) 28%, transparent); }
 .cat-card__photo { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cat-card--deceased .cat-card__photo { filter: grayscale(0.85) contrast(0.95); }
-.cat-card__placeholder { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.75rem; color: var(--text-3); background: repeating-linear-gradient(135deg, var(--surface-2) 0 8px, var(--surface) 8px 16px); }
+.cat-card__placeholder { display: grid; place-items: center; width: 100%; height: 100%; background: var(--surface-2); }
 .cat-card__sex { position: absolute; right: 0.3rem; bottom: 0.3rem; display: grid; place-items: center; width: 1.55rem; height: 1.55rem; border: 1px solid transparent; border-radius: 50%; font-size: 0.9rem; font-weight: 700; line-height: 1; box-shadow: 0 1px 3px rgb(0 0 0 / 0.2); }
 .cat-card__sex--male { color: var(--male); background: color-mix(in srgb, var(--male) 18%, var(--surface)); border-color: color-mix(in srgb, var(--male) 40%, transparent); }
 .cat-card__sex--female { color: var(--female); background: color-mix(in srgb, var(--female) 18%, var(--surface)); border-color: color-mix(in srgb, var(--female) 40%, transparent); }
@@ -417,7 +417,7 @@ body { overflow-x: clip; }
 .cat-head h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); }
 .section-bar h2 { font-size: 1.5rem; }
 .cat-grid { display: grid; gap: 1.5rem; margin-bottom: 2.5rem; }
-@media (min-width: 52rem) { .cat-grid { grid-template-columns: 1.4fr 1fr; } }
+@media (min-width: 52rem) { .cat-grid { grid-template-columns: 1.4fr minmax(14rem, 1fr); } }
 .facts { margin: 0; display: grid; gap: 0.2rem; }
 .facts div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding-block: 0.4rem; border-bottom: 1px solid var(--border); }
 .facts dt { color: var(--text-3); }
@@ -466,7 +466,12 @@ body { overflow-x: clip; }
 .combobox__sub { color: var(--text-3); font-size: 0.88rem; margin-left: 0.35rem; }
 .combobox__note { padding: 0.5rem 0.6rem; color: var(--text-3); font-size: 0.9rem; }
 
-.cat-photo { max-width: 100%; border-radius: var(--radius); border: 1px solid var(--border); grid-column: 1 / -1; }
+.cat-grid__side { display: grid; gap: 1rem; align-content: start; }
+.cat-photo { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); }
+.cat-photo--empty { display: grid; place-items: center; background: var(--surface-2); }
+.cat-photo--empty .cat-placeholder { width: 55%; }
+.cat-placeholder { display: block; color: var(--text-3); opacity: 0.3; }
+.cat-card__placeholder .cat-placeholder { width: 65%; }
 
 .coi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; align-self: start; }
 .coi--wide { max-width: 32rem; margin-bottom: 2rem; }
@@ -563,3 +568,33 @@ a.ped-node:hover { border-color: var(--accent); color: var(--text); }
 .catalog__cats a { display: flex; flex-direction: column; padding: 0.4rem 0.6rem; border-radius: 8px; background: var(--surface-2); color: var(--text); text-decoration: none; }
 .catalog__cats small { color: var(--text-3); }
 .catalog__group > .btn { margin: 0 0.85rem 0.8rem; }
+
+/* Common ancestors (causes of inbreeding) in shades of red */
+.ped-node--causal { color: var(--text); }
+.ped-heat-1 { --heat: 14%; } .ped-heat-2 { --heat: 28%; } .ped-heat-3 { --heat: 42%; } .ped-heat-4 { --heat: 58%; } .ped-heat-5 { --heat: 74%; }
+.ped-node--causal { background: color-mix(in srgb, #d62828 var(--heat), var(--surface-2)); border-color: #d62828; }
+.ped-node--causal strong, .ped-node--causal small { color: var(--text); }
+.ped-legend { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; font-size: 0.9rem; color: var(--text-2); }
+.ped-legend__scale { display: inline-flex; flex: none; border-radius: 4px; overflow: hidden; border: 1px solid #d62828; }
+.ped-legend__scale i { display: block; width: 1.1rem; height: 0.8rem; background: color-mix(in srgb, #d62828 var(--heat), var(--surface-2)); }
+
+/* Cat passport: hidden on screen, the only thing printed (browser "Save as PDF") */
+.passport { display: none; }
+@media print {
+  body.print-passport > *:not(main), body.print-passport main > *:not(.container), body.print-passport .site-header, body.print-passport .site-footer { display: none !important; }
+  body.print-passport .portal__title, body.print-passport #subheader, body.print-passport #app > *:not(.passport) { display: none !important; }
+  body.print-passport .passport { display: block; color: #111; background: #fff; }
+  body.print-passport { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .passport__head { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 3px solid #d98a00; padding-bottom: 0.6rem; margin-bottom: 0.8rem; }
+  .passport__head img { width: 7rem; height: 7rem; object-fit: cover; border-radius: 8px; }
+  .passport__kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; color: #555; }
+  .passport h2 { margin: 0; font-size: 1.8rem; }
+  .passport__facts { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+  .passport__facts th { text-align: left; width: 11rem; color: #555; font-weight: 600; }
+  .passport__facts th, .passport__facts td { padding: 0.25rem 0.4rem; border-bottom: 1px solid #ddd; }
+  .passport .ped-scroll { overflow: visible; }
+  .passport .ped-node { background: #f5f5f5; color: #111; }
+  .passport .ped-node--causal { background: color-mix(in srgb, #d62828 var(--heat), #fff); }
+  .passport__foot { margin-top: 1rem; font-size: 0.8rem; color: #666; }
+  @page { margin: 12mm; }
+}

@@ -76,6 +76,9 @@ function countryList() {
 const emsBadge = (code: string, name?: string | null) =>
   `<span class="ems ${coatClass(code)}"><span class="ems__swatch" aria-hidden="true"></span><span class="ems__code">${esc(code)}</span>${name ? ` <span class="ems__name">${esc(name)}</span>` : ''}</span>`;
 
+/** Placeholder for cats without a photo: a simple cat-head silhouette, drawn faintly by CSS. */
+const catPlaceholder = (cls: string) => `<svg class="${cls}" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 8l12 10c2.6-.7 5.2-1 8-1s5.4.3 8 1L52 8c1.6 0 2.5 1.4 2.5 3l-.5 16c3.4 3.2 5.5 7.4 5.5 12.2C59.5 49.4 47.4 57 32 57S4.5 49.4 4.5 39.2c0-4.8 2.1-9 5.5-12.2L9.5 11C9.5 9.4 10.4 8 12 8zM21 33a3.5 4.5 0 100 9 3.5 4.5 0 000-9zm22 0a3.5 4.5 0 100 9 3.5 4.5 0 000-9zM32 44l-3 2.5 3 2 3-2z"/></svg>`;
+
 const catCard = (c: Json) => {
   const titles = [c.title_prefix, c.title_suffix].filter(Boolean).join(' ');
   const deceased = Boolean(c.died_on);
@@ -87,7 +90,7 @@ const catCard = (c: Json) => {
     ? `<div class="cat-card__fact cat-card__fact--${kind}${extra ? ` ${extra}` : ''}"><dt>${esc(label)}</dt><dd title="${esc(value)}">${esc(value)}</dd></div>` : '');
   return `<li class="${classes}"><a class="cat-card__link" href="${catUrl(c.id)}">
     <div class="cat-card__media">
-      ${c.photo ? `<img class="cat-card__photo" src="${esc(c.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-card__placeholder" aria-hidden="true">🐾</div>`}
+      ${c.photo ? `<img class="cat-card__photo" src="${esc(c.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-card__placeholder">${catPlaceholder('cat-placeholder')}</div>`}
       ${c.sex ? `<span class="cat-card__sex cat-card__sex--${esc(c.sex)}" role="img" aria-label="${esc(sexLabel(c.sex))}" title="${esc(sexLabel(c.sex))}"><span aria-hidden="true">${sexSymbol}</span></span>` : ''}
     </div>
     <div class="cat-card__body">
@@ -303,14 +306,44 @@ function onSubmit(form: HTMLFormElement, handler: (data: Record<string, string>)
 
 // ---------------------------------------------------------------- pedigree
 
-function pedigreeNode(n: Json | null, depth: number): string {
-  if (!n) return `<div class="ped-branch"><div class="ped-node ped-node--empty">${esc(t('common.unknown'))}</div></div>`;
-  const meta = [n.breed_code, n.ems_code, fmtDate(n.born_on)].filter(Boolean).join(' · ');
-  const parents = n.sire || n.dam ? `<div class="ped-parents">${pedigreeNode(n.sire, depth + 1)}${pedigreeNode(n.dam, depth + 1)}</div>` : '';
-  return `<div class="ped-branch"><a class="ped-node ped-node--${esc(n.sex)}" href="${catUrl(n.id)}"><strong>${esc(catName(n))}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</a>${parents}</div>`;
+/** Ancestors found on both the sire's and the dam's side, i.e. the cats that cause inbreeding, with their share and a heat level 1-5. */
+type Causal = Map<string, { share: number; level: number }>;
+
+function causalAncestors(sire: Json | null, dam: Json | null): Causal {
+  const depths = (n: Json | null, d: number, into: Map<string, number[]>) => {
+    if (!n) return;
+    into.set(n.id, [...(into.get(n.id) ?? []), d]);
+    depths(n.sire, d + 1, into);
+    depths(n.dam, d + 1, into);
+  };
+  const a = new Map<string, number[]>();
+  const b = new Map<string, number[]>();
+  depths(sire, 0, a);
+  depths(dam, 0, b);
+  const shares = new Map<string, number>();
+  for (const [id, da] of a) {
+    const db = b.get(id);
+    if (db) shares.set(id, da.reduce((sum, x) => sum + db.reduce((s2, y) => s2 + 0.5 ** (x + y + 1), 0), 0));
+  }
+  const max = Math.max(0, ...shares.values());
+  return new Map([...shares].map(([id, share]) => [id, { share, level: Math.max(1, Math.ceil((share / max) * 5)) }]));
 }
 
-const pedigreeHtml = (tree: Json) => `<div class="ped-scroll" role="group" aria-label="${esc(t('cat.pedigree'))}"><div class="ped">${pedigreeNode(tree, 0)}</div></div>`;
+const causalLegend = (causal: Causal) => causal.size
+  ? `<p class="ped-legend"><span class="ped-legend__scale" aria-hidden="true">${[1, 2, 3, 4, 5].map((l) => `<i class="ped-heat-${l}"></i>`).join('')}</span> ${esc(t('cat.causalLegend', { n: causal.size }))}</p>` : '';
+
+function pedigreeNode(n: Json | null, depth: number, causal?: Causal): string {
+  if (!n) return `<div class="ped-branch"><div class="ped-node ped-node--empty">${esc(t('common.unknown'))}</div></div>`;
+  const meta = [n.breed_code, n.ems_code, fmtDate(n.born_on)].filter(Boolean).join(' · ');
+  const parents = n.sire || n.dam ? `<div class="ped-parents">${pedigreeNode(n.sire, depth + 1, causal)}${pedigreeNode(n.dam, depth + 1, causal)}</div>` : '';
+  const hot = depth > 0 ? causal?.get(n.id) : undefined;
+  return `<div class="ped-branch"><a class="ped-node ped-node--${esc(n.sex)}${hot ? ` ped-node--causal ped-heat-${hot.level}` : ''}"${hot ? ` title="${esc(t('cat.causalTitle', { pct: (hot.share * 100).toFixed(2) }))}"` : ''} href="${catUrl(n.id)}"><strong>${esc(catName(n))}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</a>${parents}</div>`;
+}
+
+const pedigreeHtml = (tree: Json) => {
+  const causal = causalAncestors(tree.sire, tree.dam);
+  return `<div class="ped-scroll" role="group" aria-label="${esc(t('cat.pedigree'))}"><div class="ped">${pedigreeNode(tree, 0, causal)}</div></div>${causalLegend(causal)}`;
+};
 
 // ---------------------------------------------------------------- cat picker
 
@@ -461,7 +494,8 @@ async function catPage() {
     const parent = (p: Json | null, fallbackId: string | null) => (p ? `<a href="${catUrl(p.id)}">${esc(p.name)}</a>` : fallbackId ? esc(t('common.unknown')) : '');
     app.innerHTML = `
       ${c.moderation_status === 'pending' ? note('info', t('cat.pendingNote')) : ''}${c.moderation_status === 'rejected' ? note('error', t('cat.rejectedNote')) : ''}
-      ${c.can_edit ? `<p><a class="btn btn--ghost" href="${href('/cat-edit/')}?id=${encodeURIComponent(c.id)}">${esc(t('common.edit'))}</a></p>` : ''}
+      <p class="row">${c.can_edit ? `<a class="btn btn--ghost" href="${href('/cat-edit/')}?id=${encodeURIComponent(c.id)}">${esc(t('common.edit'))}</a>` : ''}<button class="btn btn--ghost" id="passport-btn" type="button">${esc(t('cat.passport'))}</button></p>
+      <article id="passport" class="passport" aria-hidden="true"></article>
       <div class="cat-grid">
         <dl class="facts">
           ${row(t('cat.fields.sex'), esc(sexLabel(c.sex)), c.sex === 'male' ? 'male' : c.sex === 'female' ? 'female' : '')}${row(t('cat.fields.born'), esc(fmtDate(c.born_on)), 'born')}${row(t('cat.fields.died'), esc(fmtDate(c.died_on)), 'died')}
@@ -470,10 +504,11 @@ async function catPage() {
           ${row(t('cat.fields.breeder'), esc(c.breeder), 'breeder')}${row(t('cat.fields.owner'), esc(c.owner_name), 'owner')}${row(t('cat.fields.country'), esc(c.country), 'country')}
           ${row(t('cat.fields.notes'), esc(c.notes))}
         </dl>
+        <div class="cat-grid__side">
+        ${c.photo ? `<img class="cat-photo" src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer">` : `<div class="cat-photo cat-photo--empty">${catPlaceholder('cat-placeholder')}</div>`}
         <aside class="coi"><h2>${esc(t('cat.inbreeding'))}</h2><p class="coi__value">${esc(pct(c.inbreeding))}</p>
           <div class="coi__bar" aria-hidden="true"><span style="width:${Math.min(100, c.inbreeding * 100 * 2)}%"></span></div>
-          <p class="coi__help">${esc(t('cat.inbreedingHelp'))}</p></aside>
-        ${c.photo ? `<img class="cat-photo" src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer">` : ''}
+          <p class="coi__help">${esc(t('cat.inbreedingHelp'))}</p></aside></div>
       </div>
       <section><div class="section-bar"><h2>${esc(t('cat.pedigree'))}</h2>
         <label>${esc(t('cat.generations'))} <select id="gens">${[2, 3, 4, 5, 6].map((n) => `<option${n === generations ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
@@ -481,10 +516,27 @@ async function catPage() {
       ${c.children.length ? `<section><h2>${esc(t('cat.kittens'))}</h2><ul class="cat-list">${c.children.map((k: Json) => `<li><a href="${catUrl(k.id)}"><strong>${esc(k.name)}</strong><span>${esc([sexLabel(k.sex), fmtDate(k.born_on)].filter(Boolean).join(' · '))}</span></a></li>`).join('')}</ul></section>` : ''}`;
 
     const tree = app.querySelector<HTMLElement>('#tree')!;
-    const load = async () => {
-      try { tree.innerHTML = pedigreeHtml((await api('GET', `/cats/${encodeURIComponent(id)}/pedigree?generations=${generations}`)).data); }
-      catch (e) { tree.innerHTML = note('error', messageOf(e)); }
+    const passport = app.querySelector<HTMLElement>('#passport')!;
+    const fact = (label: string, value: unknown) => (value ? `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>` : '');
+    const fillPassport = (data: Json) => {
+      passport.innerHTML = `<header class="passport__head"><div><p class="passport__kicker">${esc(t('cat.passport'))}</p><h2>${esc(catName(c))}</h2></div>${c.photo ? `<img src="${esc(c.photo)}" alt="" referrerpolicy="no-referrer">` : ''}</header>
+        <table class="passport__facts">${fact(t('cat.fields.sex'), sexLabel(c.sex))}${fact(t('cat.fields.born'), fmtDate(c.born_on))}${fact(t('cat.fields.died'), fmtDate(c.died_on))}
+          ${fact(t('cat.fields.breed'), c.breed_code)}${fact(t('cat.fields.ems'), [c.ems_code, c.ems_name].filter(Boolean).join(' – '))}${fact(t('cat.fields.reg'), c.reg_number)}
+          ${fact(t('cat.fields.breeder'), c.breeder)}${fact(t('cat.fields.owner'), c.owner_name)}${fact(t('cat.fields.country'), c.country)}${fact(t('cat.inbreeding'), pct(c.inbreeding))}</table>
+        <h3>${esc(t('cat.pedigree'))}</h3>${pedigreeHtml(data)}<p class="passport__foot">${esc(location.origin + catUrl(c.id))}</p>`;
     };
+    const load = async () => {
+      try {
+        const data = (await api('GET', `/cats/${encodeURIComponent(id)}/pedigree?generations=${generations}`)).data;
+        tree.innerHTML = pedigreeHtml(data);
+        fillPassport(data);
+      } catch (e) { tree.innerHTML = note('error', messageOf(e)); }
+    };
+    app.querySelector('#passport-btn')!.addEventListener('click', () => {
+      document.body.classList.add('print-passport');
+      window.addEventListener('afterprint', () => document.body.classList.remove('print-passport'), { once: true });
+      window.print();
+    });
     app.querySelector<HTMLSelectElement>('#gens')!.addEventListener('change', (ev) => { generations = Number((ev.target as HTMLSelectElement).value); load(); });
     load();
   } catch (e) { app.innerHTML = note('error', e instanceof ApiError && e.status === 404 ? t('common.empty') : messageOf(e)); }
@@ -503,12 +555,13 @@ function matingPage() {
     if (!sire.id || !dam.id) { form.querySelector('.form-error')!.textContent = t('mating.need'); return; }
     form.querySelector('.form-error')!.textContent = '';
     const { data } = await api('GET', '/test-mating' + query({ sire: sire.id, dam: dam.id, generations: 4 }));
+    const causal = causalAncestors(data.sire, data.dam);
     out.innerHTML = `<section class="coi coi--wide"><h2>${esc(t('mating.result'))}</h2><p class="coi__value">${esc(pct(data.inbreeding))}</p>
       <div class="coi__bar" aria-hidden="true"><span style="width:${Math.min(100, data.inbreeding * 200)}%"></span></div>
       <p class="coi__help">${esc(t('cat.inbreedingHelp'))} <a href="${href('/docs/genetics/inbreeding/')}">?</a></p></section>
       <h2>${esc(t('cat.pedigree'))}</h2>
       <div class="ped-scroll"><div class="ped"><div class="ped-branch"><div class="ped-node ped-node--empty">${esc(t('mating.result'))}</div>
-      <div class="ped-parents">${pedigreeNode(data.sire, 0)}${pedigreeNode(data.dam, 0)}</div></div></div></div>`;
+      <div class="ped-parents">${pedigreeNode(data.sire, 1, causal)}${pedigreeNode(data.dam, 1, causal)}</div></div></div></div>${causalLegend(causal)}`;
   });
 }
 
