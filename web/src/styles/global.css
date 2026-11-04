@@ -670,3 +670,5 @@ a.ped-node:hover { border-color: var(--accent); color: var(--text); }
 
 .seed-count { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; }
 .seed-count input { width: 5.5rem; }
+
+.demo-banner { margin: 0 0 1rem; padding: .75rem 1rem; border: 1px solid var(--amber-500, #f59e0b); border-left-width: 4px; border-radius: .5rem; background: color-mix(in srgb, var(--amber-500, #f59e0b) 14%, transparent); font-weight: 600; }

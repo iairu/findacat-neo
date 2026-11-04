@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AdminBreedController;
 use App\Http\Controllers\Api\AdminCatController;
 use App\Http\Controllers\Api\AdminEmsController;
 use App\Http\Controllers\Api\AdminSeedController;
+use App\Http\Controllers\Api\AdminSettingController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatController;
 use App\Http\Controllers\Api\InstallController;
 use App\Http\Controllers\Api\LookupController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
@@ -20,6 +22,8 @@ Route::get('/health', fn () => [
 
 Route::get('/settings', fn () => [
     'signups' => ! config('app.signups_disabled'),
+    // On unless an admin switched it off.
+    'demo_banner' => DB::table('app_settings')->where('name', 'demo_banner')->value('value') !== '0',
 ]);
 
 // Runs before the sessions and cache tables exist, so it skips the session middleware and throttles itself.
@@ -76,6 +80,8 @@ Route::middleware(['auth:sanctum', 'verified', 'can:admin'])->prefix('admin')->g
 
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::patch('/users/{user}', [AdminUserController::class, 'update']);
+
+    Route::put('/settings', [AdminSettingController::class, 'update']);
 
     Route::post('/seed/cats', [AdminSeedController::class, 'cats']);
     Route::post('/seed/reference', [AdminSeedController::class, 'reference']);

@@ -33,6 +33,21 @@ class AdminApiTest extends TestCase
         $this->actingAs($user)->deleteJson('/api/admin/backup/cats', ['confirm' => 'DELETE'])->assertForbidden();
     }
 
+    public function test_admin_toggles_the_demo_banner(): void
+    {
+        $this->getJson('/api/settings')->assertJsonPath('demo_banner', true);
+
+        $this->actingAs(User::factory()->create())->putJson('/api/admin/settings', ['demo_banner' => false])->assertForbidden();
+
+        $admin = $this->admin();
+        $this->actingAs($admin)->putJson('/api/admin/settings', ['demo_banner' => 'maybe'])->assertUnprocessable();
+        $this->actingAs($admin)->putJson('/api/admin/settings', ['demo_banner' => false])->assertOk();
+        $this->getJson('/api/settings')->assertJsonPath('demo_banner', false);
+
+        $this->actingAs($admin)->putJson('/api/admin/settings', ['demo_banner' => true])->assertOk();
+        $this->getJson('/api/settings')->assertJsonPath('demo_banner', true);
+    }
+
     public function test_admin_loads_every_breed_and_ems_colour_once(): void
     {
         $admin = $this->admin();

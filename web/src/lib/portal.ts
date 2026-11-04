@@ -437,7 +437,8 @@ async function catsPage() {
         <button class="btn btn--primary" type="submit">${esc(t('common.search'))}</button>
         <p class="form-error" role="alert"></p>
       </form>`);
-  app.innerHTML = `<div id="results" aria-live="polite"></div>`;
+  const banner = (await api('GET', '/settings').catch(() => ({ demo_banner: true }))).demo_banner !== false;
+  app.innerHTML = `${banner ? `<p class="demo-banner" role="note">${esc(t('cats.demoBanner'))}</p>` : ''}<div id="results" aria-live="polite"></div>`;
   const form = sub.querySelector<HTMLFormElement>('form')!;
   let emsRows: Json[] | null = null;
   enhanceCombo(sub, 'ems_code', () => {
@@ -983,6 +984,7 @@ async function adminPage() {
   async function backupTab() {
     const tableLead: Record<string, string> = { cats: t('admin.tableLead.cats'), breeds: t('admin.tableLead.breeds'), ems: t('admin.tableLead.ems') };
     panel.innerHTML = head(t('admin.tab.backup'), t('admin.backupLead'))
+      + `<section class="admin-card"><h3>${esc(t('admin.demoBanner'))}</h3><p class="admin-card__lead">${esc(t('admin.demoBannerLead'))}</p><label class="check admin-toggle"><input type="checkbox" data-demo-banner disabled> ${esc(t('admin.demoBannerToggle'))}</label><span class="admin-hint" data-demo-out aria-live="polite"></span></section>`
       + `<div class="admin-grid">${TABLES.map((tb) => `<section class="admin-card backup" data-table="${tb}"><h3>${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</h3><p class="admin-card__lead">${esc(tableLead[tb])}</p>
           <div class="admin-step"><h4>${esc(t('admin.backup'))}</h4><p class="row"><a class="btn btn--ghost" href="/api/admin/backup/${tb}" download>${esc(t('admin.export'))}</a></p></div>
           <div class="admin-step"><h4>${esc(t('admin.restore'))}</h4>
@@ -992,6 +994,16 @@ async function adminPage() {
             <div class="import-out" ${tb === 'cats' ? 'data-seed-out' : 'data-reference-out'} aria-live="polite"></div></div>` : ''}</section>`).join('')}</div>
       <section class="admin-card danger"><h3>${esc(t('admin.danger'))}</h3><p class="admin-card__lead">${esc(t('admin.clearLead'))}</p>
         <div class="danger__rows">${TABLES.map((tb) => `<form class="danger__row" data-clear="${tb}" novalidate><span class="danger__name">${esc(tb === 'cats' ? t('admin.cats') : t('admin.tab.' + tb))}</span><input name="confirm" aria-label="DELETE" placeholder="DELETE" autocomplete="off"><button class="btn btn--ghost btn--danger" type="submit">${esc(t('admin.clear', { table: tb }))}</button><small class="field-error" data-error-for="confirm" role="alert"></small><span class="form-error" role="alert"></span></form>`).join('')}</div></section>`;
+
+    const demo = panel.querySelector<HTMLInputElement>('[data-demo-banner]')!;
+    const demoOut = panel.querySelector<HTMLElement>('[data-demo-out]')!;
+    api('GET', '/settings').then((s) => { demo.checked = s.demo_banner !== false; demo.disabled = false; }).catch(() => {});
+    demo.addEventListener('change', async () => {
+      demo.disabled = true;
+      try { await api('PUT', '/admin/settings', { demo_banner: demo.checked }); demoOut.textContent = t('admin.demoBannerSaved'); }
+      catch (e) { demo.checked = !demo.checked; panel.insertAdjacentHTML('afterbegin', note('error', messageOf(e))); }
+      finally { demo.disabled = false; }
+    });
 
     const seed = panel.querySelector<HTMLButtonElement>('[data-seed]');
     seed?.addEventListener('click', async () => {
